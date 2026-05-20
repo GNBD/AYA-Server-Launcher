@@ -1,17 +1,9 @@
-# NENE HELPER / NENE LAUNCHER 🐔
+# Server LAUNCHER 🐔
 
 > **A simple and lightweight tool designed to make your Minecraft server management easier.**
 > (It might not be the "world's best," but it's definitely useful!)
 
-한국어 사용자는 [여기(Click)](https://github.com/GNBD/NENE-Helper/blob/main/README%20kr.md)로 이동하십시오.
-
-NeNe EP: https://github.com/GNBD/NeneEP
-
-
-
-🎉이 프로그램은 NeneHelper 를 쉽게 업데이트 하고 다운로드 할수있게 제작되었습니다 많은 사용 바랍니다! ❤️
----
-📩Download [ NENEmanager](https://github.com/GNBD/NENE-Helper/releases/tag/nenemanager)
+[AIO](https://github.com/GNBD/NENE-Helper/releases/tag/nenemanager)
 
 ## 🚀 Project Overview
 
