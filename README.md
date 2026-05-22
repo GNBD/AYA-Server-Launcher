@@ -13,7 +13,8 @@ It automatically fetches the latest server core through the PaperMC API (or cust
 ### 🚧 Work In Progress
 > If you encounter any bugs or have suggestions, please feel free to open an issue on the **[GitHub Issues]** tab at any time. Your feedback makes this tool better!
 
-<img width="1439" height="804" alt="image" src="https://github.com/user-attachments/assets/dbb28b9f-ac32-4960-9a81-501ed5c9bc2f" />
+<img width="1446" height="796" alt="image" src="https://github.com/user-attachments/assets/64a19ffe-aadc-4edf-9bb1-c074ef875686" />
+
 
 
 
