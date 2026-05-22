@@ -1,4 +1,4 @@
-# Server LAUNCHER
+# Server Launcher
 
 > **A simple and lightweight tool designed to make your Minecraft server management easier.**
 > (It might not be the "world's best," but it's definitely useful!)
