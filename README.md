@@ -13,9 +13,9 @@ It automatically fetches the latest server core through the PaperMC API (or cust
 ### 🚧 Work In Progress
 > If you encounter any bugs or have suggestions, please feel free to open an issue on the **[GitHub Issues]** tab at any time. Your feedback makes this tool better!
 
-![스크린샷 2025-11-23 193858](https://github.com/user-attachments/assets/7ffcff58-54e5-4114-921c-e6a18e035c66)
+<img width="1439" height="804" alt="image" src="https://github.com/user-attachments/assets/dbb28b9f-ac32-4960-9a81-501ed5c9bc2f" />
 
-👉 **Official Website:** [https://nenehelper.netlify.app/](https://nenehelper.netlify.app/)
+
 
 ---
 
