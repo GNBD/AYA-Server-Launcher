@@ -11,7 +11,6 @@
 It automatically fetches the latest server core through the PaperMC API (or custom API), and provides a user-friendly Web GUI built with Python and HTML/CSS.
 
 ### 🚧 Work In Progress
-> **This project is still under active development.**
 > If you encounter any bugs or have suggestions, please feel free to open an issue on the **[GitHub Issues]** tab at any time. Your feedback makes this tool better!
 
 ![스크린샷 2025-11-23 193858](https://github.com/user-attachments/assets/7ffcff58-54e5-4114-921c-e6a18e035c66)
