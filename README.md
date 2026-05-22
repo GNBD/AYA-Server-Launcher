@@ -79,5 +79,3 @@ Special thanks to the open-source libraries and services that made this project 
 * **Responsibility:** If any critical problems arise from this program, the repository may be taken down without prior notice.
 * **Legal:** This app is in **no way affiliated with Mojang AB or Microsoft Corporation**.
 * This software is distributed under the MIT License. The copyright holder disclaims any liability for any claims, damages, or other liabilities arising from the use of this software.
-
-❤️ **Created with love by JIN**
