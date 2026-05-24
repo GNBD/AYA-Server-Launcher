@@ -3,7 +3,7 @@
 > **A simple and lightweight tool designed to make your Minecraft server management easier.**
 > (It might not be the "world's best," but it's definitely useful!)
 
-[Server Launcher DOWNLOAD](https://github.com/GNBD/NENE-Helper/releases/tag/AYA)
+[Server Launcher DOWNLOAD](https://github.com/GNBD/AYA-Server-Launcher/releases/tag/AYA)  <<<<----
 
 ## 🚀 Project Overview
 
@@ -51,30 +51,36 @@ It provides a user-friendly web GUI built with Python and HTML/CSS.
 
 ---
 
-## 📦 Libraries & Resources
+## 📦 Libraries and Resources
 
-Special thanks to the open-source libraries and services that made this project possible:
+Special thanks to the open source libraries and services that made this project possible:
 
 ### **Backend (Python)**
-* **[Eel](https://github.com/python-eel/Eel):** A little library for making simple Electron-like HTML/JS GUI apps.
-* **[psutil](https://github.com/giampaolo/psutil):** Cross-platform library for retrieving information on running processes and system utilization (CPU/RAM).
-* **[requests](https://requests.readthedocs.io/):** A simple, yet elegant HTTP library for API communication & file downloads.
+
+* **[Eel](https://github.com/python-eel/Eel):** A library for building HTML/JS GUI apps.
+
+* **[psutil](https://github.com/giampaolo/psutil):** A cross-platform library for retrieving information on running processes and system usage (CPU/RAM).
+
+* **[requests](https://requests.readthedocs.io/):** A simple yet elegant HTTP library for communication and file downloads.
 
 ### **Frontend (Web)**
-* **[Pretendard](https://github.com/orioncactus/pretendard):** A multi-platform system UI font that helps the interface look clean and modern (served via jsDelivr).
-* **[Phosphor Icons](https://phosphoricons.com/):** A flexible icon family for interfaces, diagrams, presentations, and more (served via unpkg).
 
-### **APIs & Services**
-* **[PaperMC API](https://papermc.io/):** Used to fetch the latest Minecraft server builds and download the core jar files.
-* **[Minotar API](https://minotar.net/):** Provides the player skin headers (avatars) used in the player management list.
+* **[Pretendard](https://github.com/orioncactus/pretendard):** A font that makes the interface look clean and modern (provided via jsDelivr).
 
-> **And a sincere thank you to all other open-source developers whose work helped build this project, even if not explicitly listed here.**
+* **[Phosphor Icons](https://phosphoricons.com/):** A flexible collection of icons for use in interfaces, diagrams, presentations, and more.
+
+* **[Minotar API](https://minotar.net/):** Provides player skin headers (avatars) used in player management lists.
+
+> **We sincerely thank all open source developers who helped build this project, even if they were not explicitly mentioned in this project.**
 
 ---
 
-## ⚠️ Disclaimer & License
+## ⚠️ Disclaimers and License
 
-* **AI Assistance:** Some features and code structures were created with the assistance of AI technology.
-* **Responsibility:** If any critical problems arise from this program, the repository may be taken down without prior notice.
-* **Legal:** This app is in **no way affiliated with Mojang AB or Microsoft Corporation**.
-* This software is distributed under the MIT License. The copyright holder disclaims any liability for any claims, damages, or other liabilities arising from the use of this software.
+* **AI Support:** Some features and code structures were developed with the assistance of AI technology.
+
+* **Liability:** If serious problems occur with this program, the repository may be deleted without prior notice.
+
+* **Legal Notice:** This app is **not affiliated with Mojang AB or Microsoft Corporation.**
+
+* The creators bear no liability for any claims, damages, or other liabilities arising from the use of this software. You are solely responsible for any negligence of use.
