@@ -7,8 +7,9 @@
 
 ## 🚀 Project Overview
 
-**server launcher** is a tool designed to help you set up and manage a Minecraft Java Edition server quickly and easily.
-It automatically fetches the latest server core through the PaperMC API (or custom API), and provides a user-friendly Web GUI built with Python and HTML/CSS.
+**Server Launcher** is a tool designed to help you set up and manage Minecraft Java Edition servers quickly and easily.
+
+It provides a user-friendly web GUI built with Python and HTML/CSS.
 
 ### 🚧 Work In Progress
 > If you encounter any bugs or have suggestions, please feel free to open an issue on the **[GitHub Issues]** tab at any time. Your feedback makes this tool better!
@@ -20,29 +21,27 @@ It automatically fetches the latest server core through the PaperMC API (or cust
 
 ---
 
-## ✨ Key Features
+### 📊 **Dashboard and Monitoring**
 
-### ⚡ **Server Management**
-* **One-click Creation:** Download the latest PaperMC core and set up a server in seconds.
-* **Easy Java Switching:** Automatically detects all installed Java versions on your PC. You can switch between versions (e.g., Java 8 ↔ Java 21) with a single click.
-* **Per-Server Settings:** Apply different Java versions to different servers effortlessly.
-* **Manual Path Support:** You can also manually specify a custom Java path if needed.
-* **Custom API Support:** You can change the server core download URL (API) if needed.
+* **Real-time Monitoring:** Check server status and CPU usage at a glance.
 
-### 📊 **Dashboard & Monitoring**
-* **Real-time Monitoring:** Check server status, CPU, and RAM usage at a glance.
-* **Web-based UI:** Clean and responsive interface using HTML/CSS.
+* **Web-based UI:** A clean and fast interface using HTML/CSS.
 
 ### 🛠 **Essential Admin Tools**
-* **One-Click Commands:** Execute essential commands instantly without typing:
-    * 🌦️ **Weather & Time:** Clear weather, Day/Night toggle.
-    * ⚙️ **Game Settings:** Change Difficulty, Gamemode.
-    * 📢 **Broadcasting:** Simple Announcement feature / Whisper.
-    * 🛡️ **Player Management:** OP/Deop, Kick, Ban users easily.
 
-### 🧩 **Add-ons & Localization**
-* **Plugin Manager:** Easily manage your server plugins (Enable/Disable/Delete).
+* **One-Click Commands:** Execute essential commands instantly without typing.
 
+* 🌦️ **Weather & Time:** Clear weather, day/night switching.
+
+* ⚙️ **Game Settings:** Change difficulty and game mode.
+
+* 📢 **Broadcasting:** Simple announcement/whisper features.
+
+* 🛡️ **Player Management:** Easily manage permission grants, player kicks, and bans.
+
+### 🧩 **Plugins**
+
+* **Plugin Manager:** Easily check server plugins.
 ---
 
 ## 🛠️ Tech Stack
