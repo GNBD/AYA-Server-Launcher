@@ -3,7 +3,7 @@
 > **A simple and lightweight tool designed to make your Minecraft server management easier.**
 > (It might not be the "world's best," but it's definitely useful!)
 
-[Server Launcher DOWNLOAD](https://github.com/GNBD/AYA-Server-Launcher/releases/tag/AYA)  <<<<----
+📩📩--->>>[Server Launcher DOWNLOAD](https://github.com/GNBD/AYA-Server-Launcher/releases/tag/AYA)  <<<---📩📩
 
 ## 🚀 Project Overview
 
