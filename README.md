@@ -4,7 +4,6 @@
 
 > (If you download the version number from the Releases section, it is difficult to update the version.)
 
-📩📩--->>>[Server Launcher DOWNLOAD](https://github.com/GNBD/AYA-Server-Launcher/releases/tag/AYA)  <<<---📩📩
 
 ## 🚀 Project Overview
 
