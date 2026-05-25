@@ -63,6 +63,8 @@ Special thanks to the open source libraries and services that made this project 
 
 * **[requests](https://requests.readthedocs.io/):** A simple yet elegant HTTP library for communication and file downloads.
 
+This program uses the open source library pystray (LGPLv3/BSD).
+
 ### **Frontend (Web)**
 
 * **[Pretendard](https://github.com/orioncactus/pretendard):** A font that makes the interface look clean and modern (provided via jsDelivr).
