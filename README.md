@@ -2,8 +2,6 @@
 
 > **A simple and lightweight tool that makes Minecraft server management easier and more convenient.**
 
-> (If you download the version number from the Releases section, it is difficult to update the version.)
-
 
 ## 🚀 Project Overview
 
