@@ -15,7 +15,8 @@ It provides a user-friendly web GUI built with Python and HTML/CSS.
 ### 🚧 Work In Progress
 > If you encounter any bugs or have suggestions, please feel free to open an issue on the **[GitHub Issues]** tab at any time. Your feedback makes this tool better!
 
-<img width="1392" height="796" alt="image" src="https://github.com/user-attachments/assets/45b059a1-ed15-47f2-a589-1475ba0f1e30" />
+<img width="1394" height="879" alt="image" src="https://github.com/user-attachments/assets/e066a299-4821-4ad2-bf57-cad4f9b8bd8d" />
+
 
 
 
