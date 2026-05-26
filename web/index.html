@@ -1,0 +1,3856 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Launcher</title>
+    <script type="text/javascript" src="/eel.js"></script>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        /* 새로운 세련된 다크 테마 및 글래스모피즘 정의 */
+        :root {
+            --bg-body: #0d0f12;
+            --bg-sidebar: #13171e;
+            --bg-card: rgba(26, 32, 44, 0.65);
+            --bg-console: #07090d;
+            --accent-blue: #00bcd4;
+            --accent-green: #00e676;
+            --accent-red: #ff5252;
+            --accent-purple: #b388ff;
+            --accent-gold: #ffd740;
+            --accent-orange: #ff9100;
+            --accent-cyan: #00f0ff;
+            --melon: #00e676;
+            --text-main: #f3f4f6;
+            --text-sub: #9ca3af;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --card-glow: rgba(0, 188, 212, 0.15);
+            --card-radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            outline: none;
+            transition: background-color 0.25s, border-color 0.25s, transform 0.15s;
+        }
+
+        body {
+            margin: 0;
+            background: radial-gradient(circle at 50% 10%, #1a202c 0%, var(--bg-body) 70%);
+            color: var(--text-main);
+            font-family: 'Pretendard', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            /* 배너를 상단에 두기 위해 컬럼 방향 설정 */
+        }
+
+        /* 세련된 크롬 스타일 스크롤바 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 사이드바 리디자인 */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-sidebar);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo-area {
+            padding: 35px 24px;
+            font-weight: 900;
+            font-size: 22px;
+            letter-spacing: 1.5px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .server-list {
+            flex: 1;
+            padding: 15px 10px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .server-item {
+            padding: 16px 18px;
+            cursor: pointer;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .server-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 25%;
+            height: 50%;
+            width: 4px;
+            background: var(--accent-blue);
+            border-radius: 0 4px 4px 0;
+            opacity: 0;
+            transition: 0.2s;
+        }
+
+        .server-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.05);
+            transform: translateX(2px);
+        }
+
+        .server-item.active {
+            background: rgba(0, 188, 212, 0.08);
+            border-color: rgba(0, 188, 212, 0.25);
+        }
+
+        .server-item.active::before {
+            opacity: 1;
+        }
+
+        .server-item h4 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .server-item p {
+            margin: 4px 0 0 0;
+            font-size: 12px;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-icon {
+            width: 42px;
+            height: 42px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            color: #cbd5e1;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .btn-new {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            border: none;
+            color: #fff;
+            gap: 6px;
+            box-shadow: 0 4px 15px rgba(0, 114, 255, 0.35);
+        }
+
+        .btn-new:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 114, 255, 0.5);
+        }
+
+        /* 메인 영역 */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: transparent;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 대기 스크린 */
+        .empty-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-body);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-sub);
+        }
+
+        .empty-screen i {
+            font-size: 72px;
+            color: var(--accent-blue);
+            animation: pulse 2s infinite alternate;
+            margin-bottom: 24px;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+
+            100% {
+                transform: scale(1.08);
+                opacity: 1;
+                filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.4));
+            }
+        }
+
+        .empty-screen h3 {
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .main-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            display: none;
+        }
+
+        .main-content-wrapper.active {
+            display: flex;
+        }
+
+        /* 헤더 리디자인 */
+        .header {
+            height: 85px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 800;
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            background: rgba(0, 230, 118, 0.08);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            color: var(--accent-green);
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.1);
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-green);
+        }
+
+        .status-badge.offline {
+            background: rgba(255, 82, 82, 0.08);
+            border-color: rgba(255, 82, 82, 0.3);
+            color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(255, 82, 82, 0.1);
+        }
+
+        .status-badge.offline .dot {
+            background: var(--accent-red);
+            box-shadow: 0 0 10px var(--accent-red);
+        }
+
+        /* 탭 가로 내비게이션 리디자인 */
+        .tabs {
+            display: flex;
+            padding: 0 40px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.1);
+            gap: 10px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 20px 10px;
+            color: var(--text-sub);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            position: relative;
+            white-space: nowrap;
+        }
+
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: transparent;
+            border-radius: 3px 3px 0 0;
+            transition: 0.2s;
+        }
+
+        .tab:hover {
+            color: #fff;
+        }
+
+        .tab.active {
+            color: var(--accent-blue);
+        }
+
+        .tab.active::after {
+            background: var(--accent-blue);
+            box-shadow: 0 -4px 10px var(--accent-blue);
+        }
+
+        .tab.danger.active {
+            color: var(--accent-red);
+        }
+
+        .tab.danger.active::after {
+            background: var(--accent-red);
+            box-shadow: 0 -4px 10px var(--accent-red);
+        }
+
+        .tab.broadcast.active {
+            color: var(--accent-purple);
+        }
+
+        .tab.broadcast.active::after {
+            background: var(--accent-purple);
+            box-shadow: 0 -4px 10px var(--accent-purple);
+        }
+
+        .tab.plugins.active {
+            color: var(--accent-orange);
+        }
+
+        .tab.plugins.active::after {
+            background: var(--accent-orange);
+            box-shadow: 0 -4px 10px var(--accent-orange);
+        }
+
+        .tab.info.active {
+            color: var(--accent-cyan);
+        }
+
+        .tab.info.active::after {
+            background: var(--accent-cyan);
+            box-shadow: 0 -4px 10px var(--accent-cyan);
+        }
+
+        /* 메인 콘텐츠 컨테이너 */
+        .content {
+            flex: 1;
+            padding: 40px;
+            padding-bottom: 120px;
+            /* 여유로운 하단 스크롤 공간 추가 */
+            overflow-y: auto;
+            display: none;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .content.active {
+            display: flex;
+        }
+
+        /* 반응형 그리드 카드 디자인 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--card-radius);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: var(--card-radius);
+            border: 1px solid transparent;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)) border-box;
+            -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 240, 255, 0.25);
+            box-shadow: 0 8px 25px rgba(0, 240, 255, 0.08);
+        }
+
+        .card-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-sub);
+        }
+
+        .card-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: #fff;
+            margin-top: 12px;
+        }
+
+        /* 터미널 및 콘솔 디자인 */
+        .console-box {
+            flex: 1;
+            background: var(--bg-console);
+            border-radius: 12px;
+            padding: 24px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            box-shadow: inset 0 4px 30px rgba(0, 0, 0, 0.8);
+            min-height: 320px;
+        }
+
+        .logs {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 13.5px;
+            line-height: 1.7;
+            color: #e2e8f0;
+            padding-right: 10px;
+        }
+
+        .logs div {
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+
+        .cmd-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            padding: 12px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        /* 푸터 버튼 액션바 */
+        .action-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-red {
+            background: linear-gradient(135deg, #ff5252, #ff1744);
+            box-shadow: 0 4px 15px rgba(255, 23, 68, 0.3);
+        }
+
+        .btn-blue {
+            background: linear-gradient(135deg, #00b0ff, #2979ff);
+            box-shadow: 0 4px 15px rgba(41, 121, 255, 0.3);
+        }
+
+        .btn-purple {
+            background: linear-gradient(135deg, #d500f9, #651fff);
+            box-shadow: 0 4px 15px rgba(101, 31, 255, 0.3);
+        }
+
+        .btn-yellow {
+            background: linear-gradient(135deg, #ffd600, #ffab00);
+            color: #0d0f12;
+            box-shadow: 0 4px 15px rgba(255, 171, 0, 0.3);
+        }
+
+        /* 환경 관리 탭 그리드 */
+        .env-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .env-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .env-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent-blue);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px var(--card-glow);
+        }
+
+        .env-btn i {
+            font-size: 32px;
+            color: var(--accent-blue);
+        }
+
+        /* 플레이어 리스트 및 관리 영역 */
+        .player-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .player-card {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+
+        .player-card:hover {
+            border-color: var(--accent-blue);
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .p-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            background-size: cover;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-xs {
+            padding: 6px 14px;
+            font-size: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid var(--accent-red);
+            background: transparent;
+            color: var(--accent-red);
+            font-weight: 700;
+        }
+
+        .btn-xs:hover {
+            background: var(--accent-red);
+            color: #fff;
+        }
+
+        /* 설정 탭 카드 및 컨트롤 */
+        .setting-card {
+            background: var(--bg-card);
+            padding: 28px;
+            border-radius: var(--card-radius);
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .setting-card h3 {
+            margin-top: 0;
+            margin-bottom: 24px;
+            font-size: 17px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 4px solid var(--accent-blue);
+            padding-left: 12px;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .setting-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .setting-row span,
+        .setting-row div {
+            font-size: 14px;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+
+        .input-text,
+        .input-num,
+        .input-select,
+        .modal-input {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .input-text:focus,
+        .input-num:focus,
+        .input-select:focus,
+        .modal-input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(0, 188, 212, 0.25);
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .input-text {
+            width: 240px;
+        }
+
+        .input-text.full-width {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        .input-num {
+            width: 90px;
+            text-align: right;
+        }
+
+        .input-select {
+            width: 160px;
+            cursor: pointer;
+        }
+
+        /* 모던 스타일 슬라이더 스위치 */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .3s;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #94a3b8;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: rgba(0, 230, 118, 0.2);
+            border-color: rgba(0, 230, 118, 0.4);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(22px);
+            background-color: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+        }
+
+        /* 토스트 팝업 리디자인 */
+        #toast-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 10001;
+        }
+
+        .toast {
+            padding: 16px 24px;
+            background: rgba(19, 23, 30, 0.9);
+            color: #fff;
+            border-left: 4px solid var(--accent-blue);
+            margin-top: 12px;
+            border-radius: 10px;
+            width: 320px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--accent-blue);
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 13.5px;
+            animation: slideIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.success {
+            border-left-color: var(--accent-green);
+        }
+
+        .toast.error {
+            border-left-color: var(--accent-red);
+        }
+
+        /* 모달 리디자인 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 8, 12, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal {
+            background: #13171e;
+            width: 480px;
+            padding: 35px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        .modal-overlay.show .modal {
+            transform: scale(1);
+        }
+
+        .modal h3 {
+            margin-top: 0;
+            color: #fff;
+            margin-bottom: 24px;
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .modal-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-input {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .modal-btn-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        /* 플레이어 상세 정보 모달 고유 스타일 */
+        .player-detail-modal {
+            width: 660px;
+            display: flex;
+            gap: 25px;
+        }
+
+        .nene-modal-style {
+            width: 950px !important;
+        }
+
+        .skin-view {
+            width: 220px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .skin-view::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, rgba(0, 188, 212, 0.1) 0%, transparent 80%);
+        }
+
+        .p-detail-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .p-stat-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            align-items: center;
+        }
+
+        .p-stat-label {
+            color: var(--text-sub);
+            font-size: 13px;
+            font-weight: 700;
+            width: 130px;
+            flex-shrink: 0;
+        }
+
+        .p-stat-val {
+            font-weight: 700;
+            text-align: right;
+            flex: 1;
+            word-break: break-all;
+            color: #fff;
+        }
+
+        .nested-stat {
+            display: flex;
+            justify-content: flex-end;
+            font-size: 13px;
+            color: #cbd5e1;
+            margin-bottom: 4px;
+        }
+
+        .nested-key {
+            color: var(--text-sub);
+            margin-right: 8px;
+            font-weight: 600;
+        }
+
+        .nested-val {
+            color: #fff;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-weight: 700;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .act-btn {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            color: #cbd5e1;
+            cursor: pointer;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .act-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+            border-color: var(--accent-blue);
+        }
+
+        .act-btn.danger {
+            color: var(--accent-red);
+            border-color: rgba(255, 82, 82, 0.2);
+        }
+
+        .act-btn.danger:hover {
+            background: var(--accent-red);
+            color: #fff;
+            border-color: var(--accent-red);
+        }
+
+        /* 리스트 관리 뷰 */
+        .list-manager-modal {
+            width: 460px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .list-box {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow-y: auto;
+            margin-bottom: 18px;
+            padding: 14px;
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 6px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .list-btn-s {
+            padding: 6px 12px;
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .list-btn-s:hover {
+            background: var(--accent-red);
+            color: white;
+            border-color: var(--accent-red);
+        }
+
+        .plugin-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px;
+            background: var(--bg-card);
+            margin-bottom: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .plugin-info-area {
+            flex: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .plugin-info-area span {
+            font-weight: 700;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .mobile-only {
+            display: none !important;
+        }
+
+        /* 📱 모바일 및 반응형 대응 추가 스타일 */
+        .mobile-header {
+            display: none;
+            height: 60px;
+            background: var(--bg-sidebar);
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .menu-toggle {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 26px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .menu-toggle:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mobile-logo {
+            font-weight: 900;
+            font-size: 18px;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 9998;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        @media (max-width: 850px) {
+            .mobile-header {
+                display: flex;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                bottom: 0;
+                width: 280px;
+                z-index: 9999;
+                transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 20px 0 50px rgba(0, 0, 0, 0.8);
+            }
+
+            .sidebar.show {
+                left: 0;
+            }
+
+            .main {
+                width: 100%;
+                margin-left: 0 !important;
+                padding-top: 0;
+                overflow-x: hidden;
+            }
+
+            .content {
+                padding: 15px;
+                gap: 15px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .action-bar {
+                order: 1;
+                justify-content: center;
+                margin: 15px 0 0;
+                gap: 8px;
+                flex-wrap: wrap;
+                width: 100%;
+            }
+
+            .console-box {
+                order: 2;
+                width: 100%;
+                max-width: calc(100vw - 30px);
+                /* 패딩 제외 너비 */
+                box-sizing: border-box;
+            }
+
+            .card-grid {
+                order: 3;
+                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+                gap: 10px;
+                width: 100%;
+            }
+
+            .action-bar .btn {
+                flex: 1 1 calc(50% - 10px);
+                /* 모바일에서 2열로 배치되도록 유도 */
+                min-width: 120px;
+                padding: 12px 15px;
+                font-size: 13px;
+                white-space: nowrap;
+            }
+
+            .modal {
+                width: 90% !important;
+                padding: 25px;
+            }
+
+            .player-detail-modal {
+                flex-direction: column;
+                width: 90% !important;
+            }
+
+            .skin-view {
+                width: 100%;
+                height: 200px;
+            }
+
+            .nene-modal-style {
+                width: 95% !important;
+            }
+
+            .header h2 {
+                font-size: 18px;
+            }
+
+            .mobile-only {
+                display: flex !important;
+            }
+
+            .mobile-hidden {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="toast-container"></div>
+    <div id="remoteSecurityWarningBanner" class="hidden"
+        style="background: linear-gradient(90deg, #ff5252, #ff1744); color: white; padding: 8px 20px; text-align: center; font-weight: bold; z-index: 15000; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.2); flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 13px;">
+            <i class="ph ph-shield-check" style="font-size: 18px;"></i>
+            <span data-i18n="security_warning_banner">보안 경고: 원격 제어용 비밀번호가 설정되어 있지 않습니다!</span>
+        </div>
+        <button class="btn"
+            style="background: white; color: #ff1744; border: none; padding: 3px 12px; font-size: 11px; font-weight: 800; border-radius: 4px;"
+            onclick="openRemoteSettingsPopup()" data-i18n="btn_go_to_settings">지금 설정하기</button>
+    </div>
+    <!-- [추가] 원격 제어 활성화 알림 배너 -->
+    <div id="remoteEnabledWarningBanner" class="hidden"
+        style="background: linear-gradient(90deg, #ff9100, #f57c00); color: white; padding: 8px 20px; text-align: center; font-weight: bold; z-index: 14999; display: flex; justify-content: center; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.2); flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 13px;">
+            <i class="ph ph-warning-circle" style="font-size: 18px;"></i>
+            <span data-i18n="remote_enabled_banner">⚠️ 원격제어(BETA)가 활성화되어 있습니다. 외부에서의 비인가 접근 등 혹시 모를 위험에 항상 주의하세요.</span>
+        </div>
+    </div>
+
+    <!-- [추가] 외부 노출 주의 배너 (노란색) -->
+    <div id="remoteIpExposureBanner" class="hidden"
+        style="background: #ffd740; color: #000; padding: 6px 20px; text-align: center; font-weight: bold; z-index: 14000; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; font-size: 11px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="ph ph-warning-circle" style="font-size: 16px;"></i>
+            <span data-i18n="remote_ip_warning">⚠️ 주의: 외부 접속 주소와 비밀번호가 유출되면 정보가 유출될 수 있습니다. 신뢰할 수 없는 사람에게는 공유하지
+                마세요!</span>
+        </div>
+        <i class="ph ph-x" style="cursor: pointer; font-size: 18px;"
+            onclick="this.parentElement.classList.add('hidden')"></i>
+    </div>
+
+    <!-- [추가] 모바일 상단 바 -->
+    <div class="mobile-header">
+        <button class="menu-toggle" onclick="toggleSidebar()">
+            <i class="ph ph-list"></i>
+        </button>
+        <div class="mobile-logo">AYA SERVER LAUNCHER</div>
+        <div style="width: 40px;"></div>
+    </div>
+
+    <!-- [추가] 사이드바 오버레이 -->
+    <div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- 메인 레이아웃 컨테이너 (사이드바 + 메인 영역) -->
+    <div style="display: flex; flex: 1; overflow: hidden; width: 100%;">
+        <aside class="sidebar">
+            <div class="logo-area" data-i18n="title_launcher">SERVER LAUNCHER</div>
+            <div class="server-list" id="sidebarList"></div>
+            <div class="sidebar-footer">
+                <button class="btn-icon" onclick="openModal('launcherSettingsModal')"><i
+                        class="ph ph-gear"></i></button>
+                <button class="btn-icon btn-new" onclick="openModal('serverCreateTypeModal')"><i class="ph ph-plus"></i>
+                    &nbsp;<span data-i18n="btn_new_server">새 서버</span></button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div id="emptyScreen" class="empty-screen"><i class="ph ph-terminal-window"></i>
+                <h3 data-i18n="msg_select_server">서버를 선택하세요</h3>
+            </div>
+            <div id="mainContent" class="main-content-wrapper">
+                <div class="header">
+                    <div class="header-left">
+                        <h2 id="headerTitle">Server Name</h2>
+                    </div>
+                    <div class="status-badge" id="statusBadge">
+                        <div class="dot"></div> <span id="statusText">READY</span>
+                    </div>
+                </div>
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('dashboard', this)" data-i18n="tab_dashboard">대시보드</div>
+                    <div class="tab" onclick="switchTab('environment', this)" data-i18n="tab_env">서버 관리</div>
+                    <div class="tab" onclick="switchTab('players', this)" data-i18n="tab_players">플레이어 관리</div>
+                    <div class="tab broadcast" onclick="switchTab('broadcast', this)" data-i18n="tab_broadcast">📢 광고/공지</div>
+                    <div class="tab" onclick="switchTab('settings', this)" data-i18n="tab_settings">전체 설정</div>
+                    <div class="tab plugins" onclick="switchTab('plugins', this)" data-i18n="tab_plugins">🧩 플러그인</div>
+                    <div class="tab info" onclick="switchTab('info', this)" data-i18n="tab_info">ℹ️ 서버 정보</div>
+                    <div class="tab danger" onclick="switchTab('danger', this)" data-i18n="tab_danger">⛔ 위험 구간</div>
+                </div>
+
+                <div id="dashboard" class="content active">
+                    <div class="card-grid">
+                        <div class="card">
+                            <div class="card-label">CPU Usage</div>
+                            <div class="card-value" id="sysCpu">0%</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-label">Allocated RAM</div>
+                            <div class="card-value" id="ramDisplay">2 GB</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-label" data-i18n="card_player">Active Players</div>
+                            <div class="card-value"><span id="playerCount">0</span></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-label" data-i18n="card_status">Server Status</div>
+                            <div class="card-value" id="statusSimple" style="font-size:20px; color: var(--accent-red)">
+                                Stopped</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-label">Public IP</div>
+                            <div class="card-value" id="publicIp" style="font-size:15px; word-break:break-all;">
+                                Checking...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="console-box">
+                        <div class="logs" id="logs"></div>
+                        <div
+                            style="display:flex; border-top:1px solid rgba(255,255,255,0.08); padding: 12px 24px; align-items:center;">
+                            <span
+                                style="color: var(--accent-green); font-weight:bold; margin-right:12px; font-size: 16px;">$</span>
+                            <input type="text" class="cmd-input" id="cmdInput" placeholder="명령어 입력..."
+                                data-i18n="ph_cmd_input">
+                        </div>
+                    </div>
+
+                    <div class="action-bar">
+                        <button class="btn btn-yellow hidden" id="btnRestart" onclick="askRestart()"
+                            data-i18n="btn_restart">재시작</button>
+                        <button class="btn btn-red hidden" id="btnStop" onclick="askStop()" data-i18n="btn_stop">서버
+                            종료</button>
+                        <button class="btn btn-blue" id="btnStart" onclick="startServer()" data-i18n="btn_start">서버
+                            시작</button>
+                    </div>
+                </div>
+
+                <div id="environment" class="content">
+                    <div class="env-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                        <div class="env-btn" onclick="openModal('timeControlModal')"
+                            style="padding: 40px 20px; border-color: var(--accent-blue);">
+                            <i class="ph ph-clock" style="font-size: 48px; color: var(--accent-blue);"></i>
+                            <div style="font-size: 18px; font-weight: 800; margin-top: 10px;" data-i18n="title_time">시간
+                                제어</div>
+                            <p style="font-size: 11px; color: var(--text-sub); margin: 5px 0 0 0;">Morning, Noon,
+                                Night...</p>
+                        </div>
+                        <div class="env-btn" onclick="openModal('weatherControlModal')"
+                            style="padding: 40px 20px; border-color: var(--melon);">
+                            <i class="ph ph-cloud-sun" style="font-size: 48px; color: var(--melon);"></i>
+                            <div style="font-size: 18px; font-weight: 800; margin-top: 10px;" data-i18n="title_weather">
+                                날씨 제어</div>
+                            <p style="font-size: 11px; color: var(--text-sub); margin: 5px 0 0 0;">Clear, Rain,
+                                Thunder...</p>
+                        </div>
+                        <div class="env-btn" onclick="openModal('difficultyControlModal')"
+                            style="padding: 40px 20px; border-color: #ff9800;">
+                            <i class="ph ph-sword" style="font-size: 48px; color: #ff9800;"></i>
+                            <div style="font-size: 18px; font-weight: 800; margin-top: 10px;"
+                                data-i18n="title_difficulty">난이도 제어</div>
+                            <p style="font-size: 11px; color: var(--text-sub); margin: 5px 0 0 0;">Easy, Normal, Hard...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="players" class="content">
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap: wrap; gap: 15px;">
+                        <h3 style="margin: 0;" data-i18n="title_player_list">접속자 목록</h3>
+                        <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                            <button class="btn btn-blue" style="padding:10px 18px; font-size:12px; box-shadow:none;"
+                                onclick="openListManager('whitelist')" data-i18n="btn_whitelist">화이트리스트 관리</button>
+                            <button class="btn btn-red" style="padding:10px 18px; font-size:12px; box-shadow:none;"
+                                onclick="openListManager('banlist')" data-i18n="btn_banlist">차단 목록 관리</button>
+                            <button class="btn btn-red"
+                                style="padding:10px 18px; font-size:12px; background:#8b0000; box-shadow:none;"
+                                onclick="openListManager('ip-banlist')" data-i18n="btn_ip_banlist">IP 차단 관리</button>
+                        </div>
+                    </div>
+                    <div id="playerList" class="player-list">
+                        <div class="empty-msg" style="text-align:center;color:#666;" data-i18n="msg_no_players">접속 중인
+                            플레이어가
+                            없습니다.</div>
+                    </div>
+                </div>
+
+                <div id="broadcast" class="content">
+                    <h2 style="color:var(--accent-purple); margin:0 0 10px 0; font-size: 20px;"
+                        data-i18n="title_broadcast">
+                        📢 광고 / 공지 보내기</h2>
+                    <p style="color:var(--text-sub); font-size:14px; margin:0 0 25px 0;" data-i18n="desc_broadcast">서버에
+                        접속한
+                        모든 플레이어에게 메시지를 실시간 방송합니다.</p>
+                    <div class="setting-card" style="border-color:var(--accent-purple);">
+                        <h3 style="color:var(--accent-purple);" data-i18n="lbl_bc_title">🖥️ 화면 중앙 타이틀 (Title)</h3>
+                        <div style="margin-bottom:12px; color:var(--text-sub); font-size:13px;"
+                            data-i18n="desc_bc_title">게임
+                            화면 중앙에 가장 크게 보이는 제목입니다.</div>
+                        <input type="text" id="bcTitleInput" class="input-text full-width"
+                            placeholder="예: 환영합니다! / 이벤트 시작!">
+                        <div style="display:flex; justify-content:flex-end; gap:10px;">
+                            <button class="btn"
+                                style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                                onclick="sendBroadcast('title_clear')" data-i18n="btn_bc_clear">지우기</button>
+                            <button class="btn btn-purple" onclick="sendBroadcast('title')" data-i18n="btn_bc_send">보내기
+                                (Send)</button>
+                        </div>
+                    </div>
+                    <div class="setting-card">
+                        <h3 data-i18n="lbl_bc_subtitle">📝 서브 타이틀 (Subtitle)</h3>
+                        <div style="margin-bottom:12px; color:var(--text-sub); font-size:13px;"
+                            data-i18n="desc_bc_subtitle">타이틀 바로 아래에 보조용으로 들어갈 메시지입니다.</div>
+                        <input type="text" id="bcSubtitleInput" class="input-text full-width"
+                            placeholder="예: 잠시 후 게임이 시작됩니다.">
+                        <div style="display:flex; justify-content:flex-end;">
+                            <button class="btn btn-blue" onclick="sendBroadcast('subtitle')" data-i18n="btn_bc_set">설정
+                                (Set)</button>
+                        </div>
+                    </div>
+                    <div class="setting-card">
+                        <h3 style="color:var(--melon);" data-i18n="lbl_bc_actionbar">💬 액션 바 (Actionbar)</h3>
+                        <div style="margin-bottom:12px; color:var(--text-sub); font-size:13px;"
+                            data-i18n="desc_bc_actionbar">아이템 핫바 영역 슬롯 위에 작고 선명하게 띄울 설명입니다.</div>
+                        <input type="text" id="bcActionbarInput" class="input-text full-width"
+                            placeholder="예: 현재 인원 5/10">
+                        <div style="display:flex; justify-content:flex-end;">
+                            <button class="btn" style="background:var(--melon); color:#000;"
+                                onclick="sendBroadcast('actionbar')" data-i18n="btn_bc_send">보내기 (Send)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="settings" class="content">
+                    <div style="text-align:right; margin-bottom:15px;"><button class="btn btn-blue"
+                            onclick="saveSettings()" style="padding:12px 24px;" data-i18n="btn_save_settings">💾 설정
+                            저장하기</button></div>
+                    <div class="setting-card" style="border-color:var(--melon);">
+                        <h3 style="color:var(--melon)" data-i18n="title_backup">💾 백업 설정</h3>
+                        <div class="setting-row">
+                            <div data-i18n="set_auto_backup">자동 백업 활성화</div><label class="switch"><input type="checkbox"
+                                    id="auto_backup"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_backup_interval">백업 주기 (분)</div><input type="number"
+                                id="backup_interval" class="input-num" value="60">
+                        </div>
+                        <div style="display:flex; gap:8px; margin-top:10px; justify-content:flex-end;">
+                            <button class="btn btn-blue" onclick="triggerBackup()" data-i18n="btn_backup_now">지금 백업하기</button>
+                            <button class="btn" style="background:rgba(255,152,0,0.1); border:1px solid rgba(255,152,0,0.3); color:var(--accent-orange);" onclick="openBackupRestoreModal()" data-i18n="btn_restore_backup">복구</button>
+                        </div>
+                    </div>
+
+                    <div class="setting-card" style="border-color:var(--accent-blue);">
+                        <h3 style="color:var(--accent-blue)" data-i18n="title_java">☕ Java 설정</h3>
+                        <div style="margin-bottom:8px; color:var(--text-sub); font-size:13px;">실행 경로 (Java Executable
+                            Path):
+                        </div>
+                        <div style="display:flex; gap:5px; margin-bottom:12px;">
+                            <input type="text" id="java_path" class="input-text" style="flex:1; text-align:left;"
+                                placeholder="예: C:\Program Files\Java\jdk-17\bin\java.exe">
+                        </div>
+                        <button class="btn"
+                            style="width:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); display:flex; justify-content:center; align-items:center; gap:8px;"
+                            onclick="openServerJavaManager()">
+                            <i class="ph ph-list"></i> 목록에서 선택 (Select from List)
+                        </button>
+                        <p style="font-size:12px; color:#888; margin-top:10px;" data-i18n="msg_java_tip">* 1.18 이상은 Java
+                            17
+                            이상, 그 이하는 Java 8 권장</p>
+                    </div>
+
+                    <div class="setting-card">
+                        <h3 style="color:var(--melon)" data-i18n="title_general">📝 일반 설정</h3>
+                        <div class="setting-row">
+                            <div data-i18n="set_motd">서버 이름 (MOTD)</div><input type="text" id="motd" class="input-text"
+                                style="width:300px;">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_server_port">서버 포트</div><input type="number" id="server-port"
+                                class="input-num">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_server_ip">서버 IP</div><input type="text" id="server-ip"
+                                class="input-text">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_max_players">최대 인원</div><input type="number" id="max-players"
+                                class="input-num">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_online_mode">정품 인증</div><label class="switch"><input type="checkbox"
+                                    id="online-mode"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_white_list">화이트리스트</div><label class="switch"><input type="checkbox"
+                                    id="white-list"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_enforce_whitelist">화이트리스트 강제</div><label class="switch"><input
+                                    type="checkbox" id="enforce-whitelist"><span class="slider"></span></label>
+                        </div>
+                    </div>
+
+                    <div class="setting-card">
+                        <h3 data-i18n="title_performance">🚀 성능 및 네트워크</h3>
+                        <div class="setting-row"><span><span data-i18n="set_ram">메모리 할당</span>: <span id="ramVal"
+                                    style="color:var(--melon); font-weight:bold;">2 GB</span></span><input type="range"
+                                id="ramSlider" min="1" max="32" value="2"
+                                style="width: 220px; accent-color: var(--melon);" oninput="updateRamLabel(this.value)">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_view_distance">시야 거리</div><input type="number" id="view-distance"
+                                class="input-num">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_simulation_distance">연산 거리</div><input type="number"
+                                id="simulation-distance" class="input-num">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_max_tick_time">최대 틱 시간</div><input type="number" id="max-tick-time"
+                                class="input-num">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_network_compression_threshold">네트워크 압축 임계값</div><input type="number"
+                                id="network-compression-threshold" class="input-num">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_rate_limit">패킷 제한</div><input type="number" id="rate-limit"
+                                class="input-num">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_use_native_transport">네이티브 전송 사용</div><label class="switch"><input
+                                    type="checkbox" id="use-native-transport"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_enable_status">상태 표시 활성화</div><label class="switch"><input
+                                    type="checkbox" id="enable-status"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_broadcast_rcon_to_ops">RCON 로그 방송</div><label class="switch"><input
+                                    type="checkbox" id="broadcast-rcon-to-ops"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_broadcast_console_to_ops">콘솔 로그 방송</div><label class="switch"><input
+                                    type="checkbox" id="broadcast-console-to-ops"><span class="slider"></span></label>
+                        </div>
+                    </div>
+
+                    <div class="setting-card">
+                        <h3 data-i18n="title_world">🌍 월드 및 생성</h3>
+                        <div class="setting-row">
+                            <div data-i18n="set_level_name">월드 폴더명</div><input type="text" id="level-name"
+                                class="input-text">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_level_seed">월드 시드</div><input type="text" id="level-seed"
+                                class="input-text">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_level_type">월드 타입</div><input type="text" id="level-type"
+                                class="input-text">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_generator_settings">생성기 설정</div><input type="text"
+                                id="generator-settings" class="input-text">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_max_world_size">월드 최대 크기</div><input type="number" id="max-world-size"
+                                class="input-num">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_allow_nether">네더(지옥) 허용</div><label class="switch"><input
+                                    type="checkbox" id="allow-nether"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_generate_structures">구조물 생성</div><label class="switch"><input
+                                    type="checkbox" id="generate-structures"><span class="slider"></span></label>
+                        </div>
+                    </div>
+
+                    <div class="setting-card">
+                        <h3 data-i18n="title_gameplay">🎮 게임 플레이</h3>
+                        <div class="setting-row">
+                            <div data-i18n="set_gamemode">기본 게임모드</div>
+                            <select id="gamemode" class="input-select" style="width:170px;">
+                                <option value="survival">서바이벌 (Survival)</option>
+                                <option value="creative">크리에이티브 (Creative)</option>
+                                <option value="adventure">모험 (Adventure)</option>
+                                <option value="spectator">관전자 (Spectator)</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_force_gamemode">게임모드 강제</div><label class="switch"><input
+                                    type="checkbox" id="force-gamemode"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_difficulty">난이도</div>
+                            <select id="difficulty" class="input-select" style="width:170px;">
+                                <option value="peaceful">평화로움 (Peaceful)</option>
+                                <option value="easy">쉬움 (Easy)</option>
+                                <option value="normal">보통 (Normal)</option>
+                                <option value="hard">어려움 (Hard)</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_hardcore">하드코어</div><label class="switch"><input type="checkbox"
+                                    id="hardcore"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_pvp">PVP 허용</div><label class="switch"><input type="checkbox"
+                                    id="pvp"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_allow_flight">비행 허용</div><label class="switch"><input type="checkbox"
+                                    id="allow-flight"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_spawn_monsters">몬스터 스폰</div><label class="switch"><input type="checkbox"
+                                    id="spawn-monsters"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_spawn_animals">동물 스폰</div><label class="switch"><input type="checkbox"
+                                    id="spawn-animals"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_spawn_npcs">NPC 스폰</div><label class="switch"><input type="checkbox"
+                                    id="spawn-npcs"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_spawn_protection">스폰 보호 구역</div><input type="number"
+                                id="spawn-protection" class="input-num">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_enable_command_block">커맨드 블록 허용</div><label class="switch"><input
+                                    type="checkbox" id="enable-command-block"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_player_idle_timeout">잠수 추방 시간(분)</div><input type="number"
+                                id="player-idle-timeout" class="input-num">
+                        </div>
+                    </div>
+
+                    <div class="setting-card">
+                        <h3 data-i18n="title_security">🔒 보안 및 기타</h3>
+                        <div class="setting-row">
+                            <div data-i18n="set_op_permission_level">OP 권한 레벨</div><input type="number"
+                                id="op-permission-level" class="input-num">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_log_ips">IP 기록</div><label class="switch"><input type="checkbox"
+                                    id="log-ips"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_enforce_secure_profile">보안 프로필 강제</div><label class="switch"><input
+                                    type="checkbox" id="enforce-secure-profile"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_prevent_proxy_connections">프록시 연결 방지</div><label class="switch"><input
+                                    type="checkbox" id="prevent-proxy-connections"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_resource_pack">리소스팩 URL</div><input type="text" id="resource-pack"
+                                class="input-text">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_require_resource_pack">리소스팩 강제</div><label class="switch"><input
+                                    type="checkbox" id="require-resource-pack"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_enable_rcon">RCON 활성화</div><label class="switch"><input type="checkbox"
+                                    id="enable-rcon"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_rcon_port">RCON 포트</div><input type="number" id="rcon.port"
+                                class="input-num">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_rcon_password">RCON 비밀번호</div><input type="text" id="rcon.password"
+                                class="input-text">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_enable_query">Query 활성화</div><label class="switch"><input
+                                    type="checkbox" id="enable-query"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_query_port">Query 포트</div><input type="number" id="query.port"
+                                class="input-num">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_sync_chunk_writes">청크 동기화 저장</div><label class="switch"><input
+                                    type="checkbox" id="sync-chunk-writes"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_enable_jmx_monitoring">JMX 모니터링</div><label class="switch"><input
+                                    type="checkbox" id="enable-jmx-monitoring"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_entity_broadcast_range_percentage">엔티티 방송 범위(%)</div><input
+                                type="number" id="entity-broadcast-range-percentage" class="input-num">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_max_chained_neighbor_updates">최대 이웃 업데이트</div><input type="number"
+                                id="max-chained-neighbor-updates" class="input-num">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_region_file_compression">청크 압축 방식</div><input type="text"
+                                id="region-file-compression" class="input-text" style="width:100px;">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_accepts_transfers">서버 이동 허용</div><label class="switch"><input
+                                    type="checkbox" id="accepts-transfers"><span class="slider"></span></label>
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_bug_report_link">버그 리포트 링크</div><input type="text" id="bug-report-link"
+                                class="input-text">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_initial_enabled_packs">초기 활성 팩</div><input type="text"
+                                id="initial-enabled-packs" class="input-text">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_initial_disabled_packs">초기 비활성 팩</div><input type="text"
+                                id="initial-disabled-packs" class="input-text">
+                        </div>
+                        <div class="setting-row">
+                            <div data-i18n="set_debug">디버그 모드</div><label class="switch"><input type="checkbox"
+                                    id="debug"><span class="slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="plugins" class="content">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h3 style="color:var(--accent-orange); margin: 0;" data-i18n="title_plugin_manage">🧩 플러그인 관리</h3>
+                        <button class="btn"
+                            style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding: 10px 18px;"
+                            onclick="refreshPluginList()" data-i18n="btn_refresh">🔄 새로고침</button>
+                    </div>
+                    <p style="color:var(--text-sub); font-size:13px; margin-top:-5px; margin-bottom:20px;">
+                        <span data-i18n="desc_plugin_list">서버 폴더의 plugins 폴더 내에 위치한 플러그인 목록입니다.</span><br>
+                        <span data-i18n="desc_plugin_toggle">스위치를 비활성화하면 확장명이 <b>.disabled</b>로 임시 수정되어 로드가 제한됩니다.</span>
+                    </p>
+                    <div id="pluginList" class="list-box"
+                        style="height: 100%; background: transparent; border: none; overflow-y: auto; padding: 0;">
+                    </div>
+                </div>
+
+                <div id="info" class="content">
+                    <h2 style="color:var(--accent-cyan); margin: 0 0 15px 0; font-size: 20px;"
+                        data-i18n="title_server_info">ℹ️ 서버 정보</h2>
+                    <div class="setting-card" style="border-color:var(--accent-cyan);">
+                        <div class="setting-row">
+                            <span data-i18n="info_created">생성 일자</span>
+                            <span id="infoCreated" style="color:#fff; font-weight:bold;">-</span>
+                        </div>
+                        <div class="setting-row">
+                            <span data-i18n="info_source">다운로드 출처</span>
+                            <span id="infoSource" style="color:var(--text-sub); font-size:13px;">-</span>
+                        </div>
+                        <div class="setting-row">
+                            <span data-i18n="info_size">디스크 사용량</span>
+                            <span id="infoSize" style="color:var(--melon); font-weight:bold;">-</span>
+                        </div>
+                        <div class="setting-row">
+                            <span data-i18n="info_java">Java 버전/경로</span>
+                            <span id="infoJava"
+                                style="color:#ddd; font-size:13px; word-break:break-all; text-align:right; width:60%;">-</span>
+                        </div>
+                        <div class="setting-row">
+                            <span data-i18n="info_players">방문한 플레이어 수</span>
+                            <span id="infoPlayers" style="color:var(--accent-blue); font-weight:bold;">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="danger" class="content">
+                    <div class="setting-card" style="border-color:#888;">
+                        <h3 style="color:#fff;" data-i18n="title_folder_check">📂 파일 위치 확인</h3>
+                        <p style="color:var(--text-sub); font-size:13px;" data-i18n="desc_folder_check">서버 런타임 파일 및 백업들이
+                            위치한
+                            시스템 폴더를 엽니다.</p>
+                        <div style="display:flex; gap:10px; margin-top:15px;">
+                            <button class="btn"
+                                style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                                onclick="openFolder('root')" data-i18n="btn_open_server_folder">📂 서버 폴더 열기</button>
+                            <button class="btn"
+                                style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                                onclick="openFolder('backup')" data-i18n="btn_open_backup_folder">💾 백업 폴더 열기</button>
+                        </div>
+                    </div>
+                    <div class="setting-card"
+                        style="border-color: rgba(255, 152, 0, 0.5); background: rgba(255, 152, 0, 0.03);">
+                        <h3 style="color:#ff9800;" data-i18n="title_update_core">⬆️ 서버 코어 버전 변경</h3>
+                        <p style="color:var(--text-sub); font-size:13px; line-height:1.6; margin-bottom: 15px;"
+                            data-i18n="desc_update_core">
+                            서버가 중지된 상태에서만 사용하세요. 선택된 버전의 최신 빌드를 다운로드하여 기존 <b>server.jar</b>를 덮어씁니다.
+                        </p>
+                        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <select id="updateCoreVersion" class="modal-input"
+                                style="flex:1; min-width:150px; margin-bottom:0; border-color:rgba(255,152,0,0.3);">
+                                <option value="">Loading versions...</option>
+                            </select>
+                            <button class="btn"
+                                style="background:rgba(255,152,0,0.1); border:1px solid rgba(255,152,0,0.4); color:#ff9800; padding: 10px 20px; white-space:nowrap;"
+                                onclick="askUpdateServerCore()" data-i18n="btn_update_core">
+                                ⬆️ 버전 변경
+                            </button>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;">
+                            <button class="btn"
+                                style="background:rgba(255,152,0,0.05); border:1px solid rgba(255,152,0,0.2); color:white; padding: 10px 18px; width:100%;"
+                                onclick="selectLocalCoreFile()" data-i18n="btn_local_core">
+                                🛠️ 로컬 코어 파일(.jar) 직접 선택 및 등록
+                            </button>
+                        </div>
+                        <p id="updateCoreStatus"
+                            style="font-size:12px; color:var(--text-sub); margin-top:10px; display:none;"></p>
+                    </div>
+
+                    <div class="setting-card"
+                        style="border: 1px solid var(--accent-red); background: rgba(255, 82, 82, 0.03);">
+                        <h3 style="color:var(--accent-red)" data-i18n="title_danger">🚫 서버 삭제 (Danger Zone)</h3>
+                        <p style="color:#ccc; font-size:14px; line-height:1.6;" data-i18n="msg_danger">주의: 현재 선택된 서버
+                            데이터를
+                            로컬에서 완전히 영구 삭제합니다. 이전 데이터는 복구가 불가능합니다.</p>
+                        <div style="text-align:right; margin-top:20px;"><button class="btn btn-red"
+                                onclick="askDeleteServer()" data-i18n="btn_delete_server">🗑️ 서버 영구 삭제</button></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 모달 정의들 -->
+        <div id="serverCreateTypeModal" class="modal-overlay">
+            <div class="modal" style="width: 420px;">
+                <h3 style="margin-bottom:20px;" data-i18n="title_create_server">🆕 새 서버 생성</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:10px;">
+                    <button class="btn"
+                        style="height: 120px; flex-direction: column; gap:10px; background: rgba(0, 188, 212, 0.05); border: 1px solid rgba(0, 188, 212, 0.2);"
+                        onclick="closeModal('serverCreateTypeModal'); openModal('eulaModal')">
+                        <i class="ph ph-plus-circle" style="font-size:32px; color:var(--accent-cyan);"></i>
+                        <span style="font-weight:bold; color:var(--accent-cyan);" data-i18n="btn_new_server_create">New Server</span>
+                    </button>
+                    <button id="btnImportServer" class="btn"
+                        style="height: 120px; flex-direction: column; gap:10px; background: rgba(255, 152, 0, 0.05); border: 1px solid rgba(255, 152, 0, 0.2);"
+                        onclick="processServerImport()">
+                        <i class="ph ph-upload-simple" style="font-size:32px; color:#ff9800;"></i>
+                        <span style="font-weight:bold; color:#ff9800;" data-i18n="btn_import_server">Import Server</span>
+                    </button>
+                </div>
+                <p style="color:var(--text-sub); font-size:12px; text-align:center;" data-i18n="desc_import_server">'불러오기'는 기존에 사용하던 마인크래프트 서버 <br>폴더를
+                    통째로 복사해 옵니다.</p>
+                <div id="importProgressArea" class="hidden"
+                    style="margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.03); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span id="importStatusText"
+                            style="font-size: 12px; color: var(--accent-blue); font-weight: bold;" data-i18n="status_import_preparing">복사 준비 중...</span>
+                    </div>
+                    <div
+                        style="width: 100%; height: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; overflow: hidden;">
+                        <div id="importProgressBar"
+                            style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)); transition: width 0.3s ease;">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-btn-group" style="margin-top:20px;">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); width:100%;"
+                        onclick="closeModal('serverCreateTypeModal')" data-i18n="btn_cancel">취소</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="eulaModal" class="modal-overlay">
+            <div class="modal">
+                <h3 data-i18n="modal_eula_title">⚖️ EULA 동의</h3>
+                <p style="color:#ddd; margin-bottom:20px; line-height:1.5;" data-i18n="msg_eula_content">...</p>
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('eulaModal')" data-i18n="btn_disagree">거절</button><button
+                        class="btn btn-blue" onclick="closeModal('eulaModal'); prepareNewServerModal()"
+                        data-i18n="btn_agree">동의합니다</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="creditsModal" class="modal-overlay">
+            <div class="modal" style="width: 540px;">
+                <h3>📜 Credits</h3>
+                <div
+                    style="max-height: 400px; overflow-y: auto; font-size: 13px; line-height: 1.6; color: #ccc; padding-right: 10px;">
+                    <h4 style="color:var(--melon); margin-bottom:5px;">Project</h4>
+                    <p><strong>Server Launcher</strong><br>A lightweight and simple server generator for Minecraft.</p>
+                    <h4 style="color:var(--accent-blue); margin-top:15px; margin-bottom:5px;">Developers</h4>
+                    <ul style="padding-left: 20px; margin: 0;">
+                        <li><strong>JIN</strong> - Director, Design, Development</li>
+                        <li><strong>Google Gemini AI</strong> - Design, Development</li>
+                    </ul>
+                    <h4 style="color:var(--accent-green); margin-top:15px; margin-bottom:5px;">Tech Stack</h4>
+                    <ul style="padding-left: 20px; margin: 0;">
+                        <li><strong>Python</strong> - Backend Runtime</li>
+                        <li><strong>Eel</strong> - GUI Library (Chrome/Edge)</li>
+                        <li><strong>HTML/CSS/JS</strong> - Frontend Interface</li>
+                    </ul>
+                    <h4 style="color:var(--accent-red); margin-top:15px; margin-bottom:5px;">Libraries & Resources</h4>
+                    <ul style="padding-left: 20px; margin: 0;">
+                        <li><strong>psutil</strong> - System Monitoring (CPU/RAM)</li>
+                        <li><strong>requests</strong> - API & Downloads</li>
+                        <li><strong>Pretendard</strong> - Font (by Orion Cactus)</li>
+                        <li><strong>Phosphor Icons</strong> - UI Icons</li>
+                        <li><strong>PaperMC API</strong> - Server Core Distribution</li>
+                        <li><strong>Minotar API</strong> - Player Skin Rendering</li>
+                    </ul>
+                    <p style="margin-top: 20px; font-size: 11px; color: #666; text-align: center;">
+                        © 2026 AYA Server Launcher. All rights reserved.
+                        
+                    </p>
+                </div>
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('creditsModal')">Close</button></div>
+            </div>
+        </div>
+
+        <!-- 환경 제어 팝업들 -->
+        <div id="timeControlModal" class="modal-overlay">
+            <div class="modal" style="width: 480px;">
+                <h3 data-i18n="title_time">⏰ 시간 제어</h3>
+                <div class="env-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
+                    <div class="env-btn"
+                        onclick="sendCommand('time set 0'); showToast('Time: Morning'); closeModal('timeControlModal')">
+                        <i class="ph ph-sun-horizon"></i><span data-i18n="env_morning">아침</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('time set 6000'); showToast('Time: Noon'); closeModal('timeControlModal')">
+                        <i class="ph ph-sun"></i><span data-i18n="env_noon">점심</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('time set 13000'); showToast('Time: Evening'); closeModal('timeControlModal')">
+                        <i class="ph ph-moon-stars"></i><span data-i18n="env_evening">저녁</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('time set 18000'); showToast('Time: Night'); closeModal('timeControlModal')">
+                        <i class="ph ph-moon"></i><span data-i18n="env_night">밤</span>
+                    </div>
+                </div>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); width: 100%;"
+                        onclick="closeModal('timeControlModal')">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="weatherControlModal" class="modal-overlay">
+            <div class="modal" style="width: 480px;">
+                <h3 data-i18n="title_weather">🌥️ 날씨 제어</h3>
+                <div class="env-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
+                    <div class="env-btn"
+                        onclick="sendCommand('weather clear'); showToast('Weather: Clear'); closeModal('weatherControlModal')">
+                        <i class="ph ph-sun"></i><span data-i18n="env_clear">맑음</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('weather rain'); showToast('Weather: Rain'); closeModal('weatherControlModal')">
+                        <i class="ph ph-cloud-rain"></i><span data-i18n="env_rain">비</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('weather thunder'); showToast('Weather: Thunder'); closeModal('weatherControlModal')">
+                        <i class="ph ph-cloud-lightning"></i><span data-i18n="env_thunder">폭풍우</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('gamerule doWeatherCycle false'); showToast('Weather Cycle: OFF'); closeModal('weatherControlModal')">
+                        <i class="ph ph-lock-key"></i><span data-i18n="env_lock">날씨 고정</span>
+                    </div>
+                    <div class="env-btn" style="grid-column: 1 / -1; border-color: var(--accent-blue);"
+                        onclick="sendCommand('weather clear'); sendCommand('gamerule doWeatherCycle true'); showToast('Weather Reset Perfect!'); closeModal('weatherControlModal')">
+                        <i class="ph ph-arrows-counter-clockwise" style="color: var(--accent-blue);"></i><span
+                            style="color: var(--accent-blue);">날씨 초기화 (Reset)</span>
+                    </div>
+                </div>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); width: 100%;"
+                        onclick="closeModal('weatherControlModal')">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="difficultyControlModal" class="modal-overlay">
+            <div class="modal" style="width: 480px;">
+                <h3 data-i18n="title_difficulty">⚔️ 난이도 제어</h3>
+                <div class="env-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
+                    <div class="env-btn"
+                        onclick="sendCommand('difficulty peaceful'); showToast('Difficulty: Peaceful'); closeModal('difficultyControlModal')">
+                        <i class="ph ph-smiley"></i><span data-i18n="diff_peaceful">평화로움</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('difficulty easy'); showToast('Difficulty: Easy'); closeModal('difficultyControlModal')">
+                        <i class="ph ph-feather"></i><span data-i18n="diff_easy">쉬움</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('difficulty normal'); showToast('Difficulty: Normal'); closeModal('difficultyControlModal')">
+                        <i class="ph ph-shield"></i><span data-i18n="diff_normal">보통</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('difficulty hard'); showToast('Difficulty: Hard'); closeModal('difficultyControlModal')">
+                        <i class="ph ph-skull"></i><span data-i18n="diff_hard">어려움</span>
+                    </div>
+                </div>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); width: 100%;"
+                        onclick="closeModal('difficultyControlModal')">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="playerDetailModal" class="modal-overlay">
+            <div class="modal player-detail-modal">
+                <div class="skin-view">
+                    <i class="ph ph-user" style="font-size:64px;"></i>
+                </div>
+                <div class="p-detail-content">
+                    <h2 id="pDetailName" style="margin:0; font-weight:800;">PlayerName</h2>
+                    <p id="pDetailUUID" style="font-size:11px; color:#666; margin:0;">UUID: Unknown</p>
+                    <div style="margin-top:10px;">
+                        <div class="p-stat-row"><span class="p-stat-label" data-i18n="modal_p_join">접속 시간</span><span
+                                class="p-stat-val" id="pDetailJoin">00:00:00</span></div>
+                        <div class="p-stat-row"><span class="p-stat-label" data-i18n="modal_p_status">상태</span><span
+                                class="p-stat-val" id="pDetailStatus" style="color:var(--accent-green);">Online</span>
+                        </div>
+                    </div>
+                    <div class="action-grid">
+                        <div class="act-btn" onclick="openWhisperModal()"
+                            style="border-color: var(--accent-blue); color: var(--accent-blue);"
+                            data-i18n="btn_whisper">💬
+                            귓속말 (Whisper)</div>
+                        <div class="act-btn" onclick="openTpModal()"
+                            style="border-color: var(--melon); color: var(--melon);" data-i18n="btn_tp">🚀 이동 (TP)</div>
+                        <div class="act-btn" onclick="openGamemodeModal()"
+                            style="border-color: var(--accent-gold); color: var(--accent-gold);" data-i18n="btn_gamemode">🎮 Gamemode
+                        </div>
+                        <div class="act-btn" onclick="openNeneDataModal()"
+                            style="border-color: var(--accent-orange); color: var(--accent-orange);">🧩 Details</div>
+
+                        <div class="act-btn" onclick="askAction('op', 'OP')" data-i18n="act_op">관리자 (OP)</div>
+                        <div class="act-btn" onclick="askAction('deop', 'DEOP')" data-i18n="act_deop">권한 해제 (DEOP)</div>
+                        <div class="act-btn danger" onclick="askAction('kick', 'KICK')" data-i18n="act_kick">추방 (KICK)
+                        </div>
+                        <div class="act-btn danger" onclick="openBanOptionModal()" data-i18n="act_ban">차단 (BAN)</div>
+                    </div><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); width:100%; margin-top:10px;"
+                        onclick="closeModal('playerDetailModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="neneDataModal" class="modal-overlay">
+            <div class="modal player-detail-modal nene-modal-style">
+                <div class="skin-view">
+                    <i class="ph ph-user" style="font-size:64px;"></i>
+                </div>
+                <div class="p-detail-content">
+                    <h2 id="neneDetailName" style="margin:0; font-weight:800;">PlayerName</h2>
+                    <p style="font-size:13px; color:var(--text-sub); margin:0;">User Data</p>
+                    <div id="neneDataContent"
+                        style="flex:1; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:10px; padding:15px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
+                        Loading...
+                    </div>
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); width:100%; margin-top:10px;"
+                        onclick="closeNeneDataModal()" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="whisperModal" class="modal-overlay">
+            <div class="modal">
+                <h3 data-i18n="modal_whisper_title">💬 귓속말 보내기</h3>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:12px;">To: <b id="whisperTarget"
+                        style="color:#fff"></b></p>
+                <input type="text" id="whisperInput" class="modal-input" placeholder="메시지 내용을 입력하세요...">
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('whisperModal')" data-i18n="btn_cancel">취소</button><button
+                        class="btn btn-blue" onclick="sendWhisperReal()" data-i18n="btn_bc_send">보내기</button></div>
+            </div>
+        </div>
+
+        <div id="tpModal" class="modal-overlay">
+            <div class="modal" style="width:420px;">
+                <h3 style="color:var(--melon);" data-i18n="modal_tp_title">🚀 텔레포트 (TP)</h3>
+                <p style="color:var(--text-sub); font-size:13px;" data-i18n="msg_tp_ask">누구에게 이동하시겠습니까?</p>
+                <div id="tpList" class="list-box" style="height: 250px;"></div>
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('tpModal')" data-i18n="btn_close">닫기</button></div>
+            </div>
+        </div>
+
+        <div id="gamemodeModal" class="modal-overlay">
+            <div class="modal">
+                <h3 style="color:var(--accent-gold);" data-i18n="title_gamemode">🎮 Gamemode</h3>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:20px;"><span data-i18n="label_target">대상</span>: <b id="gmTarget"
+                        style="color:#fff"></b></p>
+                <div class="env-grid">
+                    <div class="env-btn" onclick="executeGamemode('survival')"><i
+                            class="ph ph-heart"></i><span data-i18n="gm_survival">Survival</span>
+                    </div>
+                    <div class="env-btn" onclick="executeGamemode('creative')"><i
+                            class="ph ph-cube"></i><span data-i18n="gm_creative">Creative</span>
+                    </div>
+                    <div class="env-btn" onclick="executeGamemode('adventure')"><i
+                            class="ph ph-map-trifold"></i><span data-i18n="gm_adventure">Adventure</span></div>
+                    <div class="env-btn" onclick="executeGamemode('spectator')"><i
+                            class="ph ph-eye"></i><span data-i18n="gm_spectator">Spectator</span>
+                    </div>
+                </div>
+                <div class="modal-btn-group" style="margin-top:20px;"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('gamemodeModal')" data-i18n="btn_cancel">취소</button></div>
+            </div>
+        </div>
+
+        <div id="banOptionModal" class="modal-overlay">
+            <div class="modal">
+                <h3 style="color:var(--accent-red);" data-i18n="modal_ban_opt_title">🚫 차단 옵션 선택</h3>
+                <p style="color:#ddd; margin-bottom:20px;" data-i18n="msg_ban_opt">어떤 방식으로 차단하시겠습니까?</p>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.02); border:1px solid var(--accent-red); color:var(--accent-red);"
+                        onclick="executeBan('name')" data-i18n="btn_ban_name">닉네임 차단 (Name Ban)</button>
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.02); border:1px solid var(--accent-red); color:var(--accent-red);"
+                        onclick="executeBan('ip')" data-i18n="btn_ban_ip">IP 차단 (IP Ban)</button>
+                    <button class="btn btn-red" onclick="executeBan('both')" data-i18n="btn_ban_both">둘 다 차단
+                        (Both)</button>
+                </div>
+                <div class="modal-btn-group" style="margin-top:20px;"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('banOptionModal')" data-i18n="btn_cancel">취소</button></div>
+            </div>
+        </div>
+
+        <div id="actionConfirmModal" class="modal-overlay">
+            <div class="modal">
+                <h3 data-i18n="modal_confirm_title">⚠️ 실행 확인</h3>
+                <p id="actionConfirmText" style="color:#ddd; margin-bottom:20px;">Execute?</p>
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('actionConfirmModal')" data-i18n="btn_cancel">취소</button><button
+                        class="btn btn-blue" onclick="confirmAction()" data-i18n="btn_confirm">확인</button></div>
+            </div>
+        </div>
+
+        <div id="stopConfirmModal" class="modal-overlay">
+            <div class="modal" style="border-color:var(--accent-red);">
+                <h3 style="color:var(--accent-red);">⚠️ 서버 종료 확인</h3>
+                <p style="color:#ddd; margin-bottom:20px;">정말 서버를 안전하게 종료하시겠습니까?</p>
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('stopConfirmModal')" data-i18n="btn_cancel">취소</button><button
+                        class="btn btn-red" onclick="executeStop()">종료</button></div>
+            </div>
+        </div>
+
+        <div id="restartConfirmModal" class="modal-overlay">
+            <div class="modal" style="border-color:var(--accent-gold);">
+                <h3 style="color:var(--accent-gold);" data-i18n="modal_restart_title">🔄 서버 재시작 확인</h3>
+                <p style="color:#ddd; margin-bottom:20px;" data-i18n="msg_restart_confirm">정말 서버를 다시 시작하시겠습니까?<br>(서버가
+                    프로세스를
+                    종료한 뒤 즉시 부팅 과정을 진행합니다)</p>
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('restartConfirmModal')" data-i18n="btn_cancel">취소</button><button
+                        class="btn btn-yellow" onclick="executeRestart()" data-i18n="btn_restart">재시작</button></div>
+            </div>
+        </div>
+
+        <div id="pluginDetailModal" class="modal-overlay">
+            <div class="modal">
+                <h3 style="color:var(--accent-orange);" data-i18n="title_plugin_manage">🧩 플러그인 관리</h3>
+                <p id="plDetailName" style="color:#fff; font-weight:bold; margin-bottom:20px;">Filename</p>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:20px;" data-i18n="msg_delete_plugin">이 플러그인을 서버 디렉토리에서 완전히
+                    삭제하시겠습니까?<br>(이
+                    작업은 다시 되돌릴 수 없습니다)</p>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('pluginDetailModal')" data-i18n="btn_cancel">취소</button>
+                    <button class="btn btn-red" onclick="confirmDeletePlugin()" data-i18n="btn_delete">🗑️ 삭제
+                        (Delete)</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="listManagerModal" class="modal-overlay">
+            <div class="modal list-manager-modal" style="width: 440px;">
+                <h3 id="listTitle" data-i18n="modal_list_title">목록 관리</h3>
+                <div style="display:flex; gap:10px; margin-bottom:15px;"><input type="text" id="listInput"
+                        class="modal-input" style="margin:0; flex:1;" placeholder="Nickname / IP"
+                        data-i18n="ph_nickname"><button class="btn btn-blue" style="padding:0 20px;"
+                        onclick="addItemToList()" data-i18n="btn_add">추가</button></div>
+                <div id="listContainer" class="list-box"></div>
+                <div style="text-align:right;"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('listManagerModal')" data-i18n="btn_close">닫기</button></div>
+            </div>
+        </div>
+
+        <div id="newServerModal" class="modal-overlay">
+            <div class="modal" style="width: 480px; max-width: 90vw;">
+                <h3 data-i18n="modal_new_title" style="margin-bottom: 25px;">✨ 새 서버 생성</h3>
+
+                <div class="modal-scroll-area" style="max-height: 500px; overflow-y: auto; padding-right: 5px;">
+                    <label class="modal-label" data-i18n="modal_new_name">서버 이름</label>
+                    <input type="text" id="newServerName" class="modal-input" placeholder="MyServer"
+                        oninput="cleanServerNameInput(this)">
+
+                    <label class="modal-label" data-i18n="modal_new_ver">버전</label>
+                    <select id="newServerVersion" class="modal-input">
+                        <option value="">Loading...</option>
+                    </select>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                        <div>
+                            <label class="modal-label" data-i18n="modal_new_difficulty">난이도 설정</label>
+                            <select id="newServerDifficulty" class="modal-input">
+                                <option value="peaceful" data-i18n="diff_peaceful">평화로움</option>
+                                <option value="easy" data-i18n="diff_easy">쉬움</option>
+                                <option value="normal" data-i18n="diff_normal" selected>보통</option>
+                                <option value="hard" data-i18n="diff_hard">어려움</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="modal-label" data-i18n="modal_new_gamemode">기본 게임모드</label>
+                            <select id="newServerGamemode" class="modal-input">
+                                <option value="survival" selected>Survival</option>
+                                <option value="creative">Creative</option>
+                                <option value="adventure">Adventure</option>
+                                <option value="spectator">Spectator</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <label class="modal-label" style="display:flex; justify-content:space-between; margin-top: 15px;">
+                        <span data-i18n="modal_new_ram">메모리 할당 (RAM)</span>
+                        <b id="newRamVal" style="color:var(--melon);">4 GB</b>
+                    </label>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <input type="range" id="newServerRam" min="1" max="32" value="4" step="1"
+                            style="flex:1; accent-color:var(--melon);"
+                            oninput="document.getElementById('newRamVal').innerText = this.value + ' GB'">
+                    </div>
+
+                    <label class="modal-label" style="margin-top: 15px;">Java 런타임 (Java Runtime)</label>
+                    <select id="newServerJava" class="modal-input">
+                        <option value="java">Loading...</option>
+                    </select>
+
+                    <label class="modal-label" style="margin-top: 15px;" data-i18n="modal_new_import_world">싱글플레이 월드
+                        복사</label>
+                    <div style="display:flex; gap:8px;">
+                        <select id="newServerImportWorld" class="modal-input"
+                            style="flex:1; border-color: rgba(0, 188, 212, 0.3); margin-bottom:0;">
+                            <option value="" data-i18n="modal_new_import_hint">(선택 안 함)</option>
+                        </select>
+                        <button class="btn"
+                            style="background:rgba(0,188,212,0.1); border:1px solid rgba(0,188,212,0.2); padding: 0 12px; height: 38px;"
+                            onclick="browseLocalWorldFolder()" title="Open File Explorer">
+                            <i class="ph ph-folder-open" style="font-size:20px; color:var(--accent-blue);"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="modal-btn-group" style="margin-top: 25px;">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('newServerModal')" data-i18n="btn_cancel">취소</button>
+                    <button class="btn btn-blue" id="btnCreateReal" onclick="createNewServer()"
+                        data-i18n="btn_create">생성</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="launcherSettingsModal" class="modal-overlay">
+            <div class="modal">
+                <h3 data-i18n="modal_setting_title">⚙️ 런처 설정</h3><label class="modal-label"
+                    data-i18n="modal_setting_mirror">미러 URL</label>
+                <div style="display:flex; gap:6px; align-items:stretch;">
+                    <input type="text" id="mirrorUrlInput"
+                        class="modal-input" style="flex:1;" value="https://api.papermc.io/v2/projects/paper">
+                    <button class="btn" onclick="openMirrorPresetModal()"
+                        style="flex-shrink:0; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); font-size:13px;">⚡</button>
+                </div>
+                <label class="modal-label"
+                    data-i18n="modal_setting_lang">언어 (Language)</label><select id="langSelect" class="modal-input"
+                    onchange="changeLanguage(this.value)">
+                </select>
+
+                <!-- [추가] 런처 설정 언어선택 밑에 칸에 버튼 배치 -->
+                <label class="modal-label" style="margin-top:15px;" data-i18n="label_remote_settings">네트워크 원격 설정 (Beta)</label>
+                <button class="btn"
+                    style="background: rgba(0, 188, 212, 0.05); border: 1px solid rgba(0, 188, 212, 0.2); width: 100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"
+                    onclick="openRemoteSettingsPopup()">
+                    <span style="color: var(--accent-blue)" data-i18n="remote_nav_btn">🌐 원격 연결 제어 관리</span>
+                    <i class="ph ph-globe" style="color: var(--accent-blue)"></i>
+                </button>
+
+                <label class="modal-label" data-i18n="label_troubleshoot">문제 해결 (Troubleshoot)</label>
+                <button class="btn"
+                    style="background: rgba(255, 82, 82, 0.05); border: 1px solid rgba(255, 82, 82, 0.2); width: 100%; display:flex; justify-content:space-between; align-items:center;"
+                    onclick="openModal('javaHelpModal')">
+                    <span style="color: var(--accent-red)" data-i18n="btn_java_kill_tool">🛠️ 자바 강제 종료 도구</span>
+                    <i class="ph ph-skull" style="color: var(--accent-red)"></i>
+                </button>
+
+                <div
+                    style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px; text-align: center;">
+                    <button class="btn"
+                        style="background: rgba(255,255,255,0.03); width: 100%; border: 1px solid rgba(255,255,255,0.08); color: #aaa;"
+                        onclick="closeModal('launcherSettingsModal'); openModal('creditsModal')" data-i18n="btn_credits">📜 Credits</button>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 15px;">
+                    <button class="btn"
+                        style="background:rgba(0,188,212,0.05); border:1px solid rgba(0,188,212,0.15); padding:10px 16px; font-size:12px; white-space:nowrap;"
+                        onclick="runUpdateCheck()" data-i18n="btn_update_check">🔄 업데이트 확인</button>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn"
+                            style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                            onclick="closeModal('launcherSettingsModal')" data-i18n="btn_close">닫기</button>
+                        <button class="btn btn-blue" onclick="saveLauncherSettings()" data-i18n="btn_save">저장</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- [추가] 미러 URL 프리셋 선택 모달 -->
+        <div id="mirrorPresetModal" class="modal-overlay">
+            <div class="modal" style="width: 420px;">
+                <h3 data-i18n="mirror_preset_title">⚡ 미러 URL 빠른 설정</h3>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:20px;" data-i18n="mirror_preset_desc">
+                    아래 버튼을 누르면 미러 URL이 즉시 지정됩니다.
+                </p>
+                <button class="btn" onclick="applyMirrorPreset('https://api.purpurmc.org/v2/purpur')"
+                    style="width:100%; background:rgba(156, 39, 176, 0.1); border:1px solid rgba(156, 39, 176, 0.3); display:flex; justify-content:space-between; align-items:center; padding:14px 18px; margin-bottom:10px;">
+                    <span style="font-weight:700;">PurpurMC</span>
+                    <span style="font-size:12px; color:#aaa;">https://api.purpurmc.org/v2/purpur</span>
+                </button>
+                <button class="btn" onclick="applyMirrorPreset('https://api.papermc.io/v2/projects/paper')"
+                    style="width:100%; background:rgba(33, 150, 243, 0.1); border:1px solid rgba(33, 150, 243, 0.3); display:flex; justify-content:space-between; align-items:center; padding:14px 18px; margin-bottom:15px;">
+                    <span style="font-weight:700;">PaperMC</span>
+                    <span style="font-size:12px; color:#aaa;">https://api.papermc.io/v2/projects/paper</span>
+                </button>
+                <div style="text-align:right;">
+                    <button class="btn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('mirrorPresetModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- [추가] 원격제어 설정 모달 팝업 -->
+        <div id="remoteControlSettingsModal" class="modal-overlay">
+            <div class="modal" style="width: 680px;">
+                <h3 style="color: var(--accent-blue);" data-i18n="remote_modal_title">🌐 원격 연결 (베타)</h3>
+                <p style="color: var(--text-sub); font-size: 13px; line-height: 1.5; margin-bottom: 20px;"
+                    data-i18n="remote_modal_desc">
+                    타 PC나 모바일 웹브라우저에서 이 런처에 접속하여 원격으로 제어할 수 있도록 도와줍니다.
+                </p>
+
+                <div
+                    style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 5px; font-weight: 700;"
+                        data-i18n="remote_addr_label">내 외부 원격 접속
+                        주소</div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div id="remoteAddressLink"
+                            style="flex:1; font-family: 'Fira Code', monospace; color: var(--accent-cyan); font-weight: bold; font-size: 14px; word-break: break-all;">
+                            불러오는 중...
+                        </div>
+                        <button class="btn" onclick="copyRemoteAddress()" data-i18n="btn_copy"
+                            style="flex-shrink:0; padding:6px 12px; background:rgba(0,188,212,0.1); border:1px solid rgba(0,188,212,0.25); font-size:12px; white-space:nowrap;">Copy</button>
+                    </div>
+                </div>
+
+                <div class="setting-row" style="margin-bottom: 20px;">
+                    <span><span data-i18n="remote_enable_label">원격 제어 활성화</span> <small
+                            style="color:var(--accent-orange); font-size:10px; margin-left:4px;"
+                            data-i18n="remote_restart_needed">(재시작 필요)</small></span>
+                    <label class="switch">
+                        <input type="checkbox" id="remote_control_enabled_checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <label class="modal-label" data-i18n="remote_pw_label">새 원격 비밀번호 설정</label>
+                <input type="password" id="remote_control_password_input" class="modal-input"
+                    data-i18n="remote_pw_placeholder" placeholder="새 비밀번호 입력 (빈 칸 입력 시 변경 없음)"
+                    style="margin-bottom: 10px;">
+                <p style="font-size: 11px; color: var(--accent-red); margin-bottom: 20px;"
+                    data-i18n="remote_pw_warning">* 안전한 환경을 위해 비밀번호 설정을 권장합니다.</p>
+
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('remoteControlSettingsModal')">닫기</button>
+                    <button class="btn btn-blue" onclick="saveRemoteControlConfig()">확인</button>
+                </div>
+
+                <div style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px;">
+                        <span style="color: var(--accent-orange); font-weight: 700; font-size: 13px;">📋 접속 기록</span>
+                        <button class="btn" style="padding: 4px 12px; font-size: 11px;" onclick="refreshAccessLogs()">새로고침</button>
+                    </div>
+                    <div id="accessLogContainer" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; font-size: 11px; font-family: 'Fira Code', monospace;">
+                        <div style="color: #666; text-align: center; padding: 20px;">불러오는 중...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- [추가] 원격 접속 인증 강제 락 잠금 화면 모달 -->
+        <div id="remoteLockScreenModal" class="modal-overlay"
+            style="z-index: 20000; background: rgba(5, 8, 12, 0.98); backdrop-filter: blur(20px);">
+            <div class="modal"
+                style="width: 400px; border-color: var(--accent-blue); box-shadow: 0 0 40px rgba(0,188,212,0.15);">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <i class="ph ph-lock-key" style="font-size: 48px; color: var(--accent-blue);"></i>
+                    <h3 style="margin-top: 10px; margin-bottom: 5px;">Remote Access Locked</h3>
+                    <p style="color: var(--text-sub); font-size: 12px;">This computer is in remote security mode.</p>
+                </div>
+
+                <label class="modal-label" style="text-align: left;">Authentication Password</label>
+                <input type="password" id="remote_auth_password_input" class="modal-input"
+                    placeholder="Enter your password" style="margin-bottom: 15px;"
+                    onkeypress="checkRemoteAuthEnter(event)">
+
+                <div id="remoteAuthAttemptMsg" style="text-align: center; font-size: 12px; color: #ff5252; margin-bottom: 12px; min-height: 18px;"></div>
+
+                <button class="btn btn-blue" style="width: 100%;" onclick="verifyRemoteLockAuth()">Authenticate</button>
+            </div>
+        </div>
+
+        <div id="deleteConfirmModal" class="modal-overlay">
+            <div class="modal" style="border-color:var(--accent-red);">
+                <h3 style="color:var(--accent-red)" data-i18n="modal_del_title">🚫 정말 삭제하시겠습니까?</h3>
+                <p style="color:#ddd;"><span data-i18n="modal_del_msg">선택된 서버: </span><b id="delTargetName"
+                        style="color:#fff"></b></p>
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('deleteConfirmModal')" data-i18n="btn_cancel">취소</button><button
+                        class="btn btn-red" onclick="confirmDeleteProcess()" data-i18n="btn_delete">제거</button></div>
+            </div>
+        </div>
+
+        <div id="updateCoreConfirmModal" class="modal-overlay">
+            <div class="modal" style="border-color:#ff9800;">
+                <h3 style="color:#ff9800;" data-i18n="title_update_core">⬆️ 서버 코어 버전 변경</h3>
+                <p style="color:#fff; font-weight:bold; font-size:16px; margin-bottom:5px;" id="updateCoreServerName">
+                </p>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:10px;" data-i18n="label_change_version">
+                    변경할 버전: <b id="updateCoreVersionName" style="color:#ff9800;"></b>
+                </p>
+                <p
+                    style="color:#ffcc80; font-size:12px; line-height:1.6; margin-bottom:20px; background:rgba(255,152,0,0.08); padding:10px; border-radius:8px; border:1px solid rgba(255,152,0,0.2);" data-i18n="warn_update_core">
+                    ⚠️ 기존 서버가 새 버전으로 업데이트 됩니다.<br>서버가 실행 중인 경우 먼저 종료하세요.<br>세계 데이터는 유지됩니다.
+                </p>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('updateCoreConfirmModal')" data-i18n="btn_cancel">취소</button>
+                    <button class="btn" style="background:rgba(255,152,0,0.2); border:1px solid #ff9800; color:#ff9800;"
+                        onclick="executeUpdateServerCore()" data-i18n="btn_confirm_update">확인 및 업데이트</button>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="javaManagerModal" class="modal-overlay">
+            <div class="modal" style="width: 520px;">
+                <h3 data-i18n="title_java_manager">☕ 설치된 자바 관리</h3>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:15px;" data-i18n="desc_java_manager">
+                    아래 목록에서 기본 자바 버전을 지정해 줄 수 있습니다.<br>
+                    <span id="javaManagerContextMsg"></span>
+                </p>
+                <div id="javaListContainer" class="list-box" style="height: 320px;">
+                    <div style="text-align:center; padding:20px; color:#666;">Loading...</div>
+                </div>
+                <div style="text-align:right; margin-top:15px;">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('javaManagerModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="javaApplyConfirmModal" class="modal-overlay">
+            <div class="modal">
+                <h3 style="color:var(--accent-green);" data-i18n="title_java_apply">⚠️ 설정 변경 확인</h3>
+                <p style="color:#ddd; margin-bottom:20px;" data-i18n="msg_java_apply_confirm">
+                    정말 이 자바 버전으로 기본 설정을 변경하시겠습니까?
+                </p>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('javaApplyConfirmModal')" data-i18n="btn_cancel">취소</button>
+                    <button class="btn btn-blue" onclick="executeJavaPathChange()" data-i18n="btn_confirm">확인</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="backupRestoreModal" class="modal-overlay">
+            <div class="modal">
+                <h3 data-i18n="title_backup_restore">💾 백업 복구</h3>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:15px;" data-i18n="desc_backup_restore">
+                    아래 목록에서 복구할 백업을 선택하세요.<br>복구 시 현재 서버 파일은 모두 삭제됩니다.
+                </p>
+                <p style="font-size:11px; color:#ff9800; text-align:center; margin-bottom:15px;">⚠️ 서버가 중지된 상태에서만 사용해주세요.</p>
+                <div id="backupListContainer" style="max-height: 240px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 4px;">
+                    <div style="text-align:center; padding:20px; color:#666;">Loading...</div>
+                </div>
+                <div style="margin-top: 12px;" id="restoreProgressArea" class="hidden">
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#888; margin-bottom:4px;"><span id="restoreCurrentFile"></span><span id="restoreProgressText"></span></div>
+                    <div style="background:rgba(255,255,255,0.1); border-radius:10px; height:6px; overflow:hidden;"><div id="restoreProgressBar" style="width:0%; height:100%; background:linear-gradient(90deg, #ff9800, #ff5722); transition: width 0.3s;"></div></div>
+                </div>
+                <div class="modal-btn-group" style="margin-top: 12px;">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('backupRestoreModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="restoreConfirmModal" class="modal-overlay">
+            <div class="modal" style="width: 400px;">
+                <h3 style="color:var(--accent-orange);">⚠️ 백업 복구 확인</h3>
+                <p style="color:#ddd; margin-bottom:20px;" id="restoreConfirmMsg"></p>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('restoreConfirmModal')">취소</button>
+                    <button class="btn" style="background:rgba(255,152,0,0.2); border:1px solid #ff9800; color:#ff9800;"
+                        onclick="executeRestoreBackup()">확인 및 복구</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="javaHelpModal" class="modal-overlay">
+            <div class="modal">
+                <h3 style="color:#fff;" data-i18n="title_java_help">🛠️ 해결 도구 (Troubleshoot)</h3>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:20px;" data-i18n="desc_java_help">
+                    자바 실행환경 충돌이나 비정상 상태 문제를 해결하기 위한 강제 정지 유틸리티 도구입니다.
+                </p>
+                <button class="btn"
+                    style="width:100%; background:rgba(255,82,82,0.08); border:1px solid var(--accent-red); color:var(--accent-red); display:flex; justify-content:center; align-items:center; gap:8px;"
+                    onclick="askKillJava()" data-i18n="btn_force_kill_java">
+                    <i class="ph ph-skull"></i> 자바 강제 종료 (Force Kill Java)
+                </button>
+                <div style="text-align:right; margin-top:20px;">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('javaHelpModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="killJavaConfirmModal" class="modal-overlay">
+            <div class="modal" style="border-color:var(--accent-red);">
+                <h3 style="color:var(--accent-red);" data-i18n="title_kill_java">⚠️ 경고 (Warning)</h3>
+                <p style="color:#ddd; margin-bottom:20px; line-height:1.6;" data-i18n="msg_kill_java_warning">
+                    이 기능을 실행하면 <b>컴퓨터에서 구동 중인 모든 Java 기반 프로세스가 예외 없이 즉시 강제 종료됩니다.</b><br><br>
+                    실행 중인 다른 공용 서버나 게임 클라이언트의 저장이 정상적으로 처리되지 않을 수 있습니다. 진행하겠습니까?
+                </p>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('killJavaConfirmModal')" data-i18n="btn_cancel">취소</button>
+                    <button class="btn btn-red" onclick="executeKillJava()" data-i18n="btn_kill_all">확인 (Kill All)</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="updateConfirmModal" class="modal-overlay">
+            <div class="modal" style="border-color:var(--accent-blue);">
+                <h3 style="color:var(--accent-blue);" data-i18n="title_update_confirm">🔄 업데이트 확인</h3>
+                <p style="color:#ddd; margin-bottom:20px; line-height:1.6;" data-i18n="msg_update_confirm">
+                    업데이트를 확인하려고 합니다.<br>
+                    <b>업데이트 진행 시 프로그램이 자동으로 종료될 수 있습니다.</b><br><br>
+                    진행하시겠습니까?
+                </p>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('updateConfirmModal')" data-i18n="btn_cancel">취소</button>
+                    <button class="btn btn-blue" onclick="executeUpdateCheck()" data-i18n="btn_confirm">확인</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="remoteNoticeModal" class="modal-overlay">
+            <div class="modal" style="border-color: var(--accent-gold); max-width:420px;">
+                <h3 style="color:var(--accent-gold); display:flex; align-items:center; gap:8px;" data-i18n="title_remote_notice">
+                    <i class="ph ph-warning-circle"></i> ⚠️ 원격 제어 주의사항
+                </h3>
+                <p style="color:#ddd; line-height: 1.7; margin-bottom: 20px; font-size:14px;" data-i18n="msg_remote_notice">
+                    원격 제어 기능은 아직 <b>미완성(베타)</b> 기능입니다.<br><br>
+                    확인되지 않은 보안 문제나 오류가 발생할 수 있습니다.<br>
+                    중요한 서버 운영 시에는 원격 제어를 비활성화하고<br>
+                    로컬에서 직접 관리하는 것을 권장합니다.
+                </p>
+                <p style="color:var(--accent-red); font-size:12px; line-height:1.6; text-align:center; padding:10px; border:1px solid rgba(255,82,82,0.2); border-radius:8px; background:rgba(255,82,82,0.05); margin-bottom:15px;" data-i18n="msg_remote_disclaimer">
+                    ⚠️ 제작자는 본 기능 사용으로 인한 해킹, 데이터 손실,<br>및 기타 모든 문제에 대해 책임지지 않습니다.
+                </p>
+                <div class="modal-btn-group">
+                    <button class="btn btn-blue" style="width:100%; font-weight:800;"
+                        onclick="closeModal('remoteNoticeModal')" data-i18n="btn_confirm_ok">확인 (OK)</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="restartAppModal" class="modal-overlay">
+            <div class="modal" style="border-color: var(--accent-gold);">
+                <h3 style="color:var(--accent-gold); display:flex; align-items:center; gap:8px;">
+                    <i class="ph ph-info"></i> <span data-i18n="remote_apply_title">설정 저장 완료</span>
+                </h3>
+                <p style="color:#ddd; line-height: 1.6; margin-bottom: 20px;" data-i18n="remote_apply_desc">
+                    프로그램 재시작 시 적용됩니다
+                </p>
+                <div class="modal-btn-group">
+                    <button class="btn btn-blue" style="width:100%; font-weight:800;"
+                        onclick="closeModal('restartAppModal')" data-i18n="btn_confirm">확인</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- [추가] 최초 실행 튜토리얼/환영 모달 -->
+        <div id="welcomeModal" class="modal-overlay">
+            <div class="modal" style="width: 500px; text-align: center; border-color: var(--accent-blue);">
+                <i class="ph ph-sparkle" style="font-size: 64px; color: var(--accent-blue); margin-bottom: 20px;"></i>
+
+                <!-- 1페이지: 언어/미러 설정 -->
+                <div id="welcomePage1">
+                    <h2 style="margin-bottom: 10px;" data-i18n="welcome_title">환영합니다!</h2>
+                    <p style="color: var(--text-sub); margin-bottom: 30px;" data-i18n="welcome_desc">
+                        AYA Server Launcher를 사용해 주셔서 감사합니다.<br>
+                        최초 실행을 위한 기본 설정을 진행해 주세요.
+                    </p>
+                    <div
+                        style="text-align: left; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 30px;">
+                        <label class="modal-label" style="color: var(--accent-blue);" data-i18n="welcome_lang_label">🌐 언어 선택 (Language)</label>
+                        <select id="welcomeLangSelect" class="modal-input" onchange="changeLanguage(this.value)"
+                            style="margin-bottom: 20px;">
+                        </select>
+                        <label class="modal-label" style="color: var(--accent-blue);" data-i18n="welcome_mirror_label">🔗 서버 다운로드 미러 설정 (Mirror URL)</label>
+                        <p style="font-size: 11px; color: #888; margin-bottom: 8px;" data-i18n="welcome_mirror_hint">* 기본값 사용을 권장합니다. (PurpurMC)</p>
+                        <input type="text" id="welcomeMirrorUrl" class="modal-input"
+                            value="https://api.purpurmc.org/v2/purpur">
+                    </div>
+                    <button class="btn btn-blue" style="width: 100%; height: 50px; font-weight: 800; font-size: 16px;"
+                        onclick="showWelcomePage2()" data-i18n="btn_next">Next</button>
+                </div>
+
+                <!-- 2페이지: 약관 동의 -->
+                    <div id="welcomePage2" style="display:none;">
+                    <h2 style="margin-bottom: 10px;" data-i18n="welcome_eula_title">📜 최종 사용자 라이선스 계약 (EULA)</h2>
+                    <div style="text-align: left; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px; max-height: 300px; overflow-y: auto; font-size: 12px; color: #ccc; line-height: 1.7;">
+                        <p>본 소프트웨어는 이용자에게 무료로 제공되나, 본 소프트웨어의 사용으로 인해 발생하는 모든 결과에 대한 책임은 전적으로 이용자 본인에게 있습니다. 제작자는 본 소프트웨어의 사용 및 결과에 대해 어떠한 법적 책임도 지지 않습니다.</p>
+                        <br>
+                        <p><b>제1조 (목적)</b></p>
+                        <p>본 약관은 개발자(이하 "제작자")가 제공하는 'AYA Server Launcher'(이하 "본 소프트웨어")를 이용자가 다운로드, 설치 및 사용하는 과정에서 제작자와 이용자 간의 권리, 의무 및 책임 제한 사항을 규정함을 목적으로 합니다.</p>
+                        <br>
+                        <p><b>제2조 (라이선스 및 사용 범위)</b></p>
+                        <p>- 사용자는 본 소프트웨어를 개인적 및 상업적 용도로 사용할 수 있습니다.</p>
+                        <p>- 사용자는 본 소프트웨어의 기능 개선, 연구 등을 위해 소프트웨어를 자유롭게 개조, 변형 및 디컴파일 할 수 있습니다.</p>
+                        <p>- 단, 본 소프트웨어를 개조하거나 재배포할 경우, 이용자는 반드시 원본 프로그램의 이름(AYA Server Launcher)과 출처를 다른 사용자가 쉽게 확인할 수 있도록 명확히 표기해야 합니다.</p>
+                        <p>- 출처 표기 없는 무단 배포 및 본 소프트웨어를 이용한 유료 판매 행위는 금지됩니다.</p>
+                        <br>
+                        <p><b>제3조 (책임의 한계 및 면책)</b></p>
+                        <p>- 본 소프트웨어는 오류나 버그가 존재할 수 있는 상태 "있는 그대로(AS-IS)" 제공되며, 제작자는 본 소프트웨어의 기능성, 안정성, 지속성에 대해 명시적 또는 묵시적인 어떠한 보증도 하지 않습니다.</p>
+                        <p>- 이용자가 본 소프트웨어(또는 개조된 소프트웨어)를 사용하여 서버를 구축 및 운영하는 과정에서 발생하는 데이터 손실, 시스템 마비, 해킹 및 보안 침해 사고, 네트워크 장애, 또는 기타 모든 유무형의 손해에 대해 제작자는 일체의 책임을 지지 않습니다.</p>
+                        <p>- 본 소프트웨어는 고도의 안정성과 보안이 요구되는 시스템이나 중요 데이터 처리 등의 환경에는 부적합 할 수 있으며, 이를 무시하고 발생한 모든 결과에 대한 책임은 사용자에게 있습니다.</p>
+                        <br>
+                        <p><b>제4조 (서드파티 서비스 및 플러그인)</b></p>
+                        <p>본 소프트웨어는 기능 구현 및 원활한 서버 구동을 위해 타사의 외부 API, 프로그램, 플러그인, 라이브러리 등을 포함하거나 연동할 수 있습니다.</p>
+                        <br>
+                        <p><b>제5조 (약관의 효력 및 위반 시 조치)</b></p>
+                        <p>- 이용자가 본 소프트웨어를 다운로드, 설치 또는 실행하는 경우 본 약관의 모든 내용에 동의한 것으로 간주합니다.</p>
+                        <p>- 이용자가 본 약관의 규정(출처 미표기 등)을 위반하는 경우, 본 소프트웨어에 대한 이용 라이선스는 즉시 자동으로 종료되며, 이용자는 소프트웨어의 사용을 중단하고 이를 삭제해야 합니다.</p>
+                        <br>
+                        <p style="color:var(--accent-orange); font-weight:700;">⚠️ 본 소프트웨어를 사용함으로써 위 약관에 동의하는 것으로 간주됩니다.</p>
+                        <p style="color:var(--accent-red); font-weight:700;">⚠️ 본 소프트웨어는 중요한 서버 운영에는 적합하지 않을 수 있습니다.</p>
+                    </div>
+                    <button class="btn btn-blue" style="width:100%; height:50px; font-weight:800; font-size:16px;"
+                        onclick="saveFirstRunSettings()" data-i18n="welcome_btn_start">시작하기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- [추가] 무단 접근용 무한 팝업 모달 (로그인창 20000보다 낮은 19000으로 설정) -->
+        <div id="accessRestrictedModal" class="modal-overlay"
+            style="z-index: 19000; background: rgba(0,0,0,0.7); backdrop-filter: blur(3px);">
+            <div class="modal" style="width: 320px; border-color: #ff5252; text-align: center;">
+                <i class="ph ph-shield-slash" style="font-size: 48px; color: #ff5252; margin-bottom: 15px;"></i>
+                <h3 style="color: #ff5252; margin-bottom: 10px;">Security Warning</h3>
+                <p style="color: #eee; font-size: 14px; margin-bottom: 20px; font-weight: 700;">
+                    Access Restricted Session
+                </p>
+                <div style="color: #ff5252; font-size: 11px; margin-top: 10px;">Please authenticate via the login screen
+                    above.</div>
+            </div>
+        </div>
+    </div> <!-- 메인 레이아웃 컨테이너 close -->
+
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // ==========================================================
+        // [보안 패치] Eel 세션 토큰 프록시 (Session Token Proxy)
+        // 모든 eel 호출에 세션 토큰을 자동으로 주입합니다.
+        // ==========================================================
+        (function () {
+            const originalEel = window.eel;
+            // URL 파라미터에서 토큰 파싱 (로컬 전용)
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlToken = urlParams.get('token');
+
+            // [수정] localhost(내 PC)인 경우에만 편의를 위해 세션 스토리지를 활용해 새로고침 시에도 토큰을 유지
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            let sessionToken = urlToken || (isLocalhost ? sessionStorage.getItem('eel_session_token') || "" : "");
+
+            // 로컬 호스트일 때만 토큰 저장 (원격 세션은 새로고침 시 만료되도록 저장하지 않음)
+            if (urlToken && isLocalhost) {
+                sessionStorage.setItem('eel_session_token', urlToken);
+                const newUrl = window.location.pathname + window.location.hash;
+                window.history.replaceState({}, document.title, newUrl);
+            } else if (urlToken) {
+                // 원격 접속인데 URL에 토큰이 있는 경우 (보안상 히스토리만 제거)
+                const newUrl = window.location.pathname + window.location.hash;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+
+            // Eel 객체를 위한 프록시 생성
+            const eelProxy = new Proxy(originalEel, {
+                get(target, prop) {
+                    const originalFunc = target[prop];
+                    // 중요: 오직 '_py'로 끝나는 사용자 정의 함수에만 토큰을 주입합니다.
+                    // Eel의 내부 함수(init, start, heartbeat 등)는 건드리지 않습니다.
+                    if (typeof originalFunc === 'function' && prop.endsWith('_py')) {
+                        return (...args) => {
+                            // 첫 번째 인자로 세션 토큰 주입
+                            return originalFunc(sessionToken, ...args);
+                        };
+                    }
+                    return originalFunc;
+                },
+                set(target, prop, value) {
+                    target[prop] = value;
+                    return true;
+                }
+            });
+
+            // 원본 eel 객체를 프록시로 대체
+            window.eel = eelProxy;
+
+            // 전역 토큰 설정 함수
+            window.setEelSessionToken = function (token) {
+                sessionToken = token;
+                // 로컬 호스트인 경우에만 새로고침 방지를 위해 토큰 저장
+                if (isLocalhost) {
+                    sessionStorage.setItem('eel_session_token', token);
+                }
+            };
+
+            // [보안 패치] 인증 상태 확인용 함수
+            window.isEelAuthenticated = function () {
+                // 토큰이 존재하고 비어있지 않은지 확인
+                return (sessionToken !== null && sessionToken !== "");
+            };
+        })();
+
+        let currentSelectedServerName = "", currentLang = "ko", currentTranslations = {}, globalPlayerList = [];
+        let neneDataInterval = null;
+
+        window.onload = function () {
+            initApp();
+            startAccessRestrictionPolling(); // [보안 패치] 무단 접근 감시 시작
+        };
+
+        async function initApp() {
+            const isFirstRun = await eel.init_system_py()();
+            await eel.check_java_status_py()();
+            await loadLauncherConfig();
+            await checkRemoteLockScreen(); // [추가] 원격 락 스크린 인증 체크 추가
+            const config = await eel.get_launcher_config_py()();
+            if (config && config.remote_enabled === true) {
+                openModal('remoteNoticeModal');
+            }
+            refreshServerList();
+            loadVersionList();
+
+            if (isFirstRun) {
+                openModal('welcomeModal');
+            }
+        }
+
+        // [보안 패치] 미인증 세션에 대해 0.5초마다 경고 팝업 강제 노출 및 자가복구
+        let accessBlockLogged = false;
+        function startAccessRestrictionPolling() {
+            setInterval(async () => {
+                // 원격 제어가 활성화되어 있는데 인증이 안 된 상태라면 (로컬 토큰도 없는 경우)
+                const config = await eel.get_launcher_config_py()();
+                if (config && config.remote_enabled === true) {
+                    // [수정] 백엔드에서 인증 실패를 보냈거나, 브라우저 토큰이 비어있는 경우
+                    if (!config.is_authenticated || !window.isEelAuthenticated()) {
+                        if (!accessBlockLogged) {
+                            accessBlockLogged = true;
+                            eel.log_access_blocked_py()();
+                        }
+                        // 세션 만료 시 데이터 클리어 (락 스크린 노출 유도)
+                        sessionToken = "";
+                        sessionStorage.removeItem('eel_session_token');
+
+                        let modal = document.getElementById('accessRestrictedModal');
+
+                        // [보안 강화] F12로 엘리먼트를 삭제해도 0.5초만에 다시 생성 (증식/자가복구)
+                        if (!modal) {
+                            const modalHtml = `
+                            <div id="accessRestrictedModal" class="modal-overlay" style="z-index: 19000; background: rgba(0,0,0,0.7); backdrop-filter: blur(3px);">
+                                <div class="modal" style="width: 320px; border-color: #ff5252; text-align: center;">
+                                    <i class="ph ph-shield-slash" style="font-size: 48px; color: #ff5252; margin-bottom: 15px;"></i>
+                                    <h3 style="color: #ff5252; margin-bottom: 10px;">Security Warning</h3>
+                                    <p style="color: #eee; font-size: 14px; margin-bottom: 20px; font-weight: 700;">
+                                        Access Restricted Session
+                                    </p>
+                                    <div style="color: #ff5252; font-size: 11px; margin-top: 10px;">Please authenticate via the login screen above.</div>
+                                </div>
+                            </div>`;
+                            document.body.insertAdjacentHTML('beforeend', modalHtml);
+                            modal = document.getElementById('accessRestrictedModal');
+                        }
+
+                        // 이미 팝업이 떠있으면 추가로 띄우지 않음
+                        if (modal && !modal.classList.contains('show')) {
+                            openModal('accessRestrictedModal');
+                        }
+                    }
+                }
+            }, 500);
+        }
+        async function tryCloseApp() { const r = await eel.try_close_app_py()(); if (r === "blocked") { showToast(currentTranslations["msg_cannot_close"] || "⚠️ Server is running!", "error"); } else { window.close(); } }
+        async function loadLauncherConfig() {
+            const c = await eel.get_launcher_config_py()();
+            if (c) {
+                if (c.language) await changeLanguage(c.language);
+                if (c.mirror_url) document.getElementById('mirrorUrlInput').value = c.mirror_url;
+                await populateLanguageSelects();
+
+                // [보안 패치] 원격 키가 없으면 상단 경고 배너 표시
+                const banner = document.getElementById('remoteSecurityWarningBanner');
+                if (c.remote_key_exists === false) {
+                    banner.classList.remove('hidden');
+                } else {
+                    banner.classList.add('hidden');
+                }
+
+                // [추가] 원격 활성화 상태일 경우 상단 알림 배너 표시
+                const enabledBanner = document.getElementById('remoteEnabledWarningBanner');
+                if (c.remote_enabled === true) {
+                    enabledBanner.classList.remove('hidden');
+                } else {
+                    enabledBanner.classList.add('hidden');
+                }
+            }
+        }
+        async function saveLauncherSettings() { const l = document.getElementById('langSelect').value; const m = document.getElementById('mirrorUrlInput').value; await eel.save_launcher_config_py({ "language": l, "mirror_url": m })(); showToast("Saved", "success"); closeModal('launcherSettingsModal'); }
+        function runUpdateCheck() { openModal('updateConfirmModal'); }
+        async function executeUpdateCheck() { closeModal('updateConfirmModal'); const r = await eel.run_update_py()(); showToast(r, r.startsWith("✅") ? "success" : "error"); }
+        function openMirrorPresetModal() { openModal('mirrorPresetModal'); }
+        function applyMirrorPreset(url) { document.getElementById('mirrorUrlInput').value = url; closeModal('mirrorPresetModal'); showToast("미러 URL이 변경되었습니다. 저장 버튼을 눌러 적용하세요.", "info"); }
+        function showWelcomePage2() {
+            const l = document.getElementById('welcomeLangSelect').value;
+            const m = document.getElementById('welcomeMirrorUrl').value;
+            eel.save_launcher_config_py({ "language": l, "mirror_url": m })();
+            document.getElementById('welcomePage1').style.display = 'none';
+            document.getElementById('welcomePage2').style.display = 'block';
+        }
+        async function saveFirstRunSettings() {
+            closeModal('welcomeModal');
+            await loadLauncherConfig();
+        }
+        async function populateLanguageSelects() {
+            const langs = await eel.get_available_languages_py()();
+            ['langSelect', 'welcomeLangSelect'].forEach(id => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                sel.innerHTML = '';
+                langs.forEach(l => {
+                    const opt = document.createElement('option');
+                    opt.value = l.code;
+                    opt.textContent = l.name;
+                    sel.appendChild(opt);
+                });
+                sel.value = currentLang;
+            });
+        }
+        async function changeLanguage(c) { currentLang = c; currentTranslations = await eel.get_translation_py(c)(); if (!currentTranslations) return; document.querySelectorAll('[data-i18n]').forEach(e => { const k = e.getAttribute('data-i18n'); if (currentTranslations[k]) { if (e.tagName === 'INPUT' || e.tagName === 'TEXTAREA') e.placeholder = currentTranslations[k]; else e.innerHTML = currentTranslations[k]; } }); }
+        async function loadVersionList() { const s = document.getElementById('newServerVersion'); const v = await eel.get_papermc_versions_py()(); if (v && v.length > 0) { s.innerHTML = ""; v.forEach(i => s.innerHTML += `<option value="${i}">${i}</option>`); } else { s.innerHTML = `<option value="1.21.1">1.21.1</option><option value="1.20.4">1.20.4</option>`; } }
+        async function refreshServerList() { let s = await eel.get_server_list_py()(); let l = document.getElementById('sidebarList'); l.innerHTML = ""; s.forEach(i => { const a = (i.name === currentSelectedServerName) ? "active" : ""; l.innerHTML += `<div class="server-item ${a}" onclick="selectServer('${i.name}', this)"><h4>${i.name}</h4><p><span style="color:${i.status === 'Running' ? 'var(--accent-green)' : 'var(--text-sub)'}">${i.status}</span><span style="color:var(--text-sub); margin-left:8px; font-size:11px;">${i.version}</span></p></div>`; }); }
+        async function selectServer(n, e) { currentSelectedServerName = n; document.getElementById('logs').innerHTML = ""; document.getElementById('emptyScreen').style.display = 'none'; document.getElementById('mainContent').classList.add('active'); document.querySelectorAll('.server-item').forEach(i => i.classList.remove('active')); if (e) e.classList.add('active'); document.getElementById('headerTitle').innerText = n; await eel.select_server_py(n)(); loadSettings(); const dbTab = document.querySelector('.tab[onclick*="dashboard"]'); if (dbTab) switchTab('dashboard', dbTab); if (window.innerWidth <= 850) closeSidebar(); }
+        function toggleSidebar() { document.querySelector('.sidebar').classList.toggle('show'); document.querySelector('.sidebar-overlay').classList.toggle('show'); }
+        function closeSidebar() { document.querySelector('.sidebar').classList.remove('show'); document.querySelector('.sidebar-overlay').classList.remove('show'); }
+
+        async function createNewServer() {
+            let n = document.getElementById('newServerName').value.trim();
+            let v = document.getElementById('newServerVersion').value;
+            let m = document.getElementById('mirrorUrlInput').value;
+            let j = document.getElementById('newServerJava').value;
+
+            // 추가 설정값 수집
+            let diff = document.getElementById('newServerDifficulty').value;
+            let gm = document.getElementById('newServerGamemode').value;
+            let ram = parseInt(document.getElementById('newServerRam').value);
+            let world = document.getElementById('newServerImportWorld').value;
+
+            let b = document.getElementById('btnCreateReal');
+            if (!n) return showToast("Name required", "error");
+
+            // 버튼 비활성화 및 상태 표시
+            b.disabled = true;
+            b.style.cursor = "not-allowed";
+            b.innerText = "Creating...";
+
+            // 백엔드 호출 (확장된 인자 전달)
+            let r = await eel.create_new_server_real_py(n, v, m, j, diff, gm, ram, world)();
+
+            b.disabled = false;
+            b.style.cursor = "pointer";
+            b.innerText = currentTranslations["btn_create"] || "Create Server";
+            changeLanguage(currentLang);
+            closeModal('newServerModal');
+
+            if (r.includes("✅")) {
+                showToast("Success", "success");
+                refreshServerList();
+            } else showToast(r, "error");
+        }
+
+        async function browseLocalWorldFolder() {
+            const path = await eel.select_local_world_folder_py()();
+            if (path) {
+                const select = document.getElementById('newServerImportWorld');
+                const oldCustom = document.getElementById('customWorldPathOption');
+                if (oldCustom) oldCustom.remove();
+
+                const option = document.createElement('option');
+                option.id = 'customWorldPathOption';
+                option.value = path;
+                const folderName = path.split(/[\\/]/).pop();
+                option.innerText = `📂 [Explorer] ${folderName}`;
+                option.selected = true;
+                select.prepend(option);
+            }
+        }
+
+        async function prepareNewServerModal() {
+            openModal('newServerModal');
+            const javaSelect = document.getElementById('newServerJava');
+            const worldSelect = document.getElementById('newServerImportWorld');
+
+            // 저장된 URL에서 버전 목록 다시 불러오기
+            document.getElementById('newServerVersion').innerHTML = "<option>Loading...</option>";
+            await loadVersionList();
+
+            javaSelect.innerHTML = "<option>Scanning...</option>";
+            worldSelect.innerHTML = "<option value=''>Scanning...</option>";
+
+            // 자바 버전 스캔
+            const javaList = await eel.scan_java_versions_py()();
+            javaSelect.innerHTML = "";
+            javaList.forEach(java => {
+                const option = document.createElement('option');
+                option.value = java.path;
+                let label = `Java ${java.version}`;
+                if (java.is_current) label += " (Default)";
+                option.innerText = label;
+                javaSelect.appendChild(option);
+            });
+
+            // 싱글플레이 월드 목록 스캔
+            const worldList = await eel.get_singleplayer_worlds_py()();
+            worldSelect.innerHTML = `<option value="" data-i18n="modal_new_import_hint">${currentTranslations["modal_new_import_hint"] || "(Select None)"}</option>`;
+            worldList.forEach(w => {
+                const option = document.createElement('option');
+                option.value = w;
+                option.innerText = w;
+                worldSelect.appendChild(option);
+            });
+        }
+
+        let serverToDelete = "";
+        function askDeleteServer() { let n = document.getElementById('headerTitle').innerText; serverToDelete = n; document.getElementById('delTargetName').innerText = n; openModal('deleteConfirmModal'); }
+        async function confirmDeleteProcess() {
+            closeModal('deleteConfirmModal');
+            // [수정] 보안 프록시 적용을 위해 _py 접미사 추가
+            let r = await eel.delete_server_real_py(serverToDelete)();
+            if (r.includes("✅")) {
+                showToast("Deleted", "success");
+                document.getElementById('emptyScreen').style.display = 'flex';
+                document.getElementById('mainContent').classList.remove('active');
+                refreshServerList();
+            } else {
+                showToast(r, "error");
+            }
+        }
+        // [추가] 백엔드에서 호출하는 진행률 업데이트 함수
+        eel.expose(update_download_progress_js);
+        function update_download_progress_js(msg) {
+            const statusEl = document.getElementById('importStatusText');
+            const barEl = document.getElementById('importProgressBar');
+            if (statusEl) statusEl.innerText = msg;
+
+            // "Copying (45%)..." 에서 숫자 추출
+            const match = msg.match(/(\d+)%/);
+            if (match && barEl) {
+                barEl.style.width = match[1] + "%";
+            }
+        }
+
+        async function processServerImport() {
+            const btn = document.getElementById('btnImportServer');
+            if (!btn || btn.disabled) return;
+
+            // UI 초기화
+            const statusArea = document.getElementById('importProgressArea');
+            const statusText = document.getElementById('importStatusText');
+            const progressBar = document.getElementById('importProgressBar');
+
+            if (statusArea) statusArea.classList.remove('hidden');
+            if (statusText) statusText.innerText = currentTranslations["status_import_preparing"] || "복사 준비 중...";
+            if (progressBar) progressBar.style.width = "0%";
+
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.querySelector('span').innerText = currentTranslations["status_import_copying"] || "복사 중...";
+
+            const r = await eel.import_existing_server_py()();
+
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.querySelector('span').innerText = currentTranslations["btn_import_server"] || "외부 서버 불러오기";
+            if (statusArea) statusArea.classList.add('hidden');
+
+            if (r.includes('✅')) {
+                showToast(currentTranslations["msg_import_done"] || "불러오기 완료!", "success");
+                closeModal('serverCreateTypeModal');
+                refreshServerList();
+            } else if (r.includes('⚠️')) {
+                // 취소 시에도 UI 정리
+                showToast(r, "info");
+            } else {
+                showToast(r, "error");
+            }
+        }
+        async function askUpdateServerCore() {
+            const v = document.getElementById('updateCoreVersion').value;
+            if (!v) return showToast("버전을 선택하세요", "error");
+            const serverName = document.getElementById('headerTitle').innerText;
+            if (!serverName) return showToast("서버를 선택하세요", "error");
+            document.getElementById('updateCoreServerName').innerText = serverName;
+            document.getElementById('updateCoreVersionName').innerText = v;
+            openModal('updateCoreConfirmModal');
+        }
+        async function executeUpdateServerCore() {
+            closeModal('updateCoreConfirmModal');
+            const v = document.getElementById('updateCoreVersion').value;
+            const m = document.getElementById('mirrorUrlInput').value;
+            const statusEl = document.getElementById('updateCoreStatus');
+            const btn = document.querySelector('[onclick="askUpdateServerCore()"]');
+
+            if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+            statusEl.style.display = 'block';
+            statusEl.style.color = 'var(--accent-blue)';
+            statusEl.innerText = '⏳ 다운로드 중...';
+
+            const r = await eel.update_server_core_py(v, m)();
+
+            if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+
+            if (r && r.includes('✅')) {
+                statusEl.style.color = 'var(--accent-green)';
+                statusEl.innerText = r;
+                showToast("버전 변경 완료!", "success");
+                refreshServerList();
+            } else {
+                statusEl.style.color = 'var(--accent-red)';
+                statusEl.innerText = r || '❌ 실패';
+                showToast(r || "실패", "error");
+            }
+        }
+        async function selectLocalCoreFile() {
+            const statusEl = document.getElementById('updateCoreStatus');
+            statusEl.style.display = 'block';
+            statusEl.style.color = 'var(--accent-blue)';
+            statusEl.innerText = '⏳ 파일 선택 대기 중...';
+
+            const r = await eel.select_local_core_py()();
+
+            if (r && r.includes('✅')) {
+                statusEl.style.color = 'var(--accent-green)';
+                statusEl.innerText = r;
+                showToast("코어 등록 완료!", "success");
+                refreshServerList();
+            } else if (r.includes('⚠️')) {
+                statusEl.style.display = 'none';
+            } else {
+                statusEl.style.color = 'var(--accent-red)';
+                statusEl.innerText = r || '❌ 실패';
+                showToast(r || "실패", "error");
+            }
+        }
+        const checkboxSettings = ['allow-flight', 'allow-nether', 'broadcast-console-to-ops', 'broadcast-rcon-to-ops', 'debug', 'enable-command-block', 'enable-jmx-monitoring', 'enable-query', 'enable-rcon', 'enable-status', 'enforce-secure-profile', 'enforce-whitelist', 'force-gamemode', 'generate-structures', 'hardcore', 'hide-online-players', 'log-ips', 'online-mode', 'prevent-proxy-connections', 'pvp', 'require-resource-pack', 'spawn-animals', 'spawn-monsters', 'spawn-npcs', 'sync-chunk-writes', 'use-native-transport', 'white-list', 'accepts-transfers', 'auto_backup'];
+        const textSettings = ['java_path', 'motd', 'max-players', 'server-port', 'server-ip', 'view-distance', 'simulation-distance', 'max-tick-time', 'network-compression-threshold', 'rate-limit', 'max-world-size', 'level-name', 'level-seed', 'level-type', 'generator-settings', 'gamemode', 'difficulty', 'spawn-protection', 'player-idle-timeout', 'op-permission-level', 'resource-pack', 'rcon.port', 'rcon.password', 'query.port', 'entity-broadcast-range-percentage', 'max-chained-neighbor-updates', 'region-file-compression', 'bug-report-link', 'initial-enabled-packs', 'initial-disabled-packs', 'backup_interval'];
+
+        async function loadSettings() {
+            let p = await eel.load_properties_py()();
+            if (!p) return;
+
+            // [추가] RAM 할당량 UI 동기화
+            if (p['ram_allocation']) {
+                const rs = document.getElementById('ramSlider');
+                if (rs) {
+                    rs.value = p['ram_allocation'];
+                    updateRamLabel(p['ram_allocation']);
+                }
+            }
+
+            checkboxSettings.forEach(i => {
+                const e = document.getElementById(i);
+                if (e) e.checked = (p[i] === 'true' || p[i] === true);
+            });
+
+            textSettings.forEach(i => {
+                const e = document.getElementById(i);
+                if (e && p[i]) e.value = String(p[i]).replace(/\\:/g, ":");
+            });
+
+            const j = document.getElementById('java_path');
+            if (p['java_path']) {
+                j.value = p['java_path'];
+            } else {
+                j.value = "java";
+            }
+        }
+
+        async function saveSettings() {
+            let d = {};
+            checkboxSettings.forEach(i => { const e = document.getElementById(i); if (e) d[i] = e.checked; });
+            textSettings.forEach(i => { const e = document.getElementById(i); if (e) d[i] = e.value; });
+
+            // [추가] RAM 할당량 값 포함
+            const ramVal = document.getElementById('ramSlider').value;
+            d['ram_allocation'] = parseInt(ramVal);
+
+            await eel.save_properties_py(d)();
+
+            // [추가] 별도의 RAM 저장 API 호출 (nene_config.json 보존용)
+            if (eel.save_ram_allocation_py) {
+                await eel.save_ram_allocation_py(parseInt(ramVal))();
+            }
+
+            showToast("Saved", "success");
+            loadSettings();
+            showToast("🔄 서버 목록 리로딩 중...", "info");
+            await refreshServerList();
+            loadVersionList();
+        }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; setTimeout(() => document.getElementById(id).classList.add('show'), 10); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); setTimeout(() => document.getElementById(id).style.display = 'none', 300); }
+        function updateRamLabel(v) { document.getElementById('ramVal').innerText = v + " GB"; document.getElementById('ramDisplay').innerText = v + " GB"; }
+
+        async function startServer() {
+            let ram = document.getElementById('ramSlider').value;
+            document.getElementById('btnStart').classList.add('hidden');
+            document.getElementById('btnStop').classList.remove('hidden');
+            document.getElementById('btnRestart').classList.remove('hidden');
+            document.getElementById('statusText').innerText = "LOADING...";
+            showToast("Starting...", "info");
+
+            if (eel.get_public_ip_py) {
+                document.getElementById('publicIp').innerText = "Checking...";
+                let ip = await eel.get_public_ip_py()();
+                document.getElementById('publicIp').innerText = ip;
+            }
+
+            // 시작 전 설정을 확실히 전용 파일에 저장하여 꼬임 방지 (백엔드 자동보정 도입으로 제거)
+            // await saveSettings();
+
+            let r = await eel.start_server_py(ram)();
+
+            if (r.includes("❌") || r.includes("⚠️")) { showToast(r, "error"); update_status_js(false); }
+            else setTimeout(refreshServerList, 1000);
+        }
+
+        function switchTab(id, btn) {
+            document.querySelectorAll('.content').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+            document.getElementById(id).classList.add('active'); btn.classList.add('active');
+            if (id === 'settings') loadSettings();
+            if (id === 'plugins') refreshPluginList();
+            if (id === 'info') loadServerInfo();
+            if (id === 'danger') loadDangerVersions();
+        }
+
+        async function loadDangerVersions() {
+            const select = document.getElementById('updateCoreVersion');
+            if (!select) return;
+            select.innerHTML = '<option value="">Loading versions...</option>';
+            const versions = await eel.get_papermc_versions_py()();
+            if (versions && versions.length > 0) {
+                select.innerHTML = "";
+                versions.forEach(v => {
+                    select.innerHTML += `<option value="${v}">${v}</option>`;
+                });
+            } else {
+                select.innerHTML = '<option value="">Failed to load</option>';
+            }
+        }
+
+
+        function sendCommand(c) { eel.send_command_py(c); }
+        document.getElementById('cmdInput').addEventListener('keypress', (e) => { if (e.key === 'Enter' && e.target.value.trim() !== "") { sendCommand(e.target.value); e.target.value = ""; } });
+        async function triggerBackup() { if (!currentSelectedServerName) return; await eel.trigger_backup_py(currentSelectedServerName)(); showToast("Backup Started", "info"); }
+        eel.expose(update_player_list_js);
+        function update_player_list_js(playerDataList) {
+            globalPlayerList = playerDataList.map(p => p.name);
+            const l = document.getElementById('playerList');
+            l.innerHTML = "";
+
+            const onlinePlayers = playerDataList.filter(p => p.online);
+            const offlinePlayers = playerDataList.filter(p => !p.online);
+
+            if (document.getElementById('playerCount')) {
+                document.getElementById('playerCount').innerText = onlinePlayers.length;
+            }
+
+            if (playerDataList.length === 0) {
+                l.innerHTML = `<div class="empty-msg" style="text-align:center;color:#666;width: 100%;padding: 20px 0;">${currentTranslations["msg_no_players"] || "No players."}</div>`;
+                return;
+            }
+
+            onlinePlayers.forEach(p => {
+                const avatarUrl = `https://minotar.net/avatar/${p.name}/40.png`;
+                l.innerHTML += `
+                    <div class="player-card" onclick="openPlayerDetail('${p.name}', true)">
+                        <div class="p-info">
+                            <div class="avatar" style="background-image: url('${avatarUrl}');"></div>
+                            <div style="font-weight:700;">${p.name}</div>
+                        </div>
+                        <div style="font-size:12px; color:var(--accent-green); font-weight:700;">● Online</div>
+                    </div>`;
+            });
+
+            if (offlinePlayers.length > 0) {
+                if (onlinePlayers.length > 0) {
+                    l.innerHTML += `<div style="grid-column: 1 / -1; margin-top:15px; padding-bottom:5px; border-bottom:1px solid var(--border-color); color:var(--text-sub); font-size:12px; font-weight:700;">Offline Players</div>`;
+                }
+                offlinePlayers.forEach(p => {
+                    const avatarUrl = `https://minotar.net/avatar/${p.name}/40.png`;
+                    l.innerHTML += `
+                        <div class="player-card" onclick="openPlayerDetail('${p.name}', false)" style="opacity: 0.55; border-style: dashed;">
+                            <div class="p-info">
+                                <div class="avatar" style="background-image: url('${avatarUrl}'); filter: grayscale(100%);"></div>
+                                <div style="font-weight:700; color:#aaa;">${p.name}</div>
+                            </div>
+                            <div style="font-size:12px; color:#666;">○ Offline</div>
+                        </div>`;
+                });
+            }
+        }
+
+        let currentDetailPlayer = "";
+
+        async function openPlayerDetail(n, isOnline) {
+            currentDetailPlayer = n;
+            document.getElementById('pDetailName').innerText = n;
+            document.getElementById('pDetailJoin').innerText = "...";
+            document.getElementById('pDetailUUID').innerText = "...";
+
+            const statusEl = document.getElementById('pDetailStatus');
+            if (isOnline) {
+                statusEl.innerText = "Online";
+                statusEl.style.color = "var(--accent-green)";
+            } else {
+                statusEl.innerText = "Offline";
+                statusEl.style.color = "#888";
+            }
+
+            const skinView = document.querySelector('.player-detail-modal .skin-view');
+            skinView.innerHTML = `<img src="https://minotar.net/armor/body/${n}/150.png" style="height:180px; width:auto; image-rendering: pixelated; ${!isOnline ? 'filter: grayscale(100%); opacity:0.6;' : ''}">`;
+
+            openModal('playerDetailModal');
+
+            const paperVersions = await eel.get_papermc_versions_py()();
+            const i = await eel.get_player_detail_py(n)();
+            if (i) {
+                document.getElementById('pDetailJoin').innerText = i.join_time;
+                document.getElementById('pDetailUUID').innerText = "UUID: " + i.uuid;
+            }
+        }
+
+        async function openNeneDataModal() {
+            closeModal('playerDetailModal');
+
+            const n = currentDetailPlayer;
+            document.getElementById('neneDetailName').innerText = n;
+            document.getElementById('neneDataContent').innerText = "Loading data...";
+
+            const skinView = document.querySelector('#neneDataModal .skin-view');
+            skinView.innerHTML = `<img src="https://minotar.net/armor/body/${n}/150.png" style="height:180px; width:auto; image-rendering: pixelated;">`;
+
+            openModal('neneDataModal');
+
+            await refreshNeneDataUI();
+
+            if (neneDataInterval) clearInterval(neneDataInterval);
+            neneDataInterval = setInterval(refreshNeneDataUI, 3000);
+        }
+
+        async function refreshNeneDataUI() {
+            const n = currentDetailPlayer;
+            const modal = document.getElementById('neneDataModal');
+            if (modal.style.display === 'none') {
+                if (neneDataInterval) clearInterval(neneDataInterval);
+                return;
+            }
+
+            const data = await eel.get_nene_player_data_py(n)();
+            const contentBox = document.getElementById('neneDataContent');
+
+            if (!contentBox) return;
+
+            if (data) {
+                let html = "";
+
+                if (data.nickname) {
+                    html += `<div class="p-stat-row"><span class="p-stat-label">이름</span><span class="p-stat-val" style="color:var(--accent-blue);">${data.nickname}</span></div>`;
+                }
+
+                for (const [key, value] of Object.entries(data)) {
+                    if (key === 'nickname') continue;
+
+                    let displayValue = "";
+
+                    if (typeof value === 'object' && value !== null) {
+                        for (const [subKey, subValue] of Object.entries(value)) {
+                            displayValue += `<div class="nested-stat"><span class="nested-key">${subKey}:</span> <span class="nested-val">${subValue}</span></div>`;
+                        }
+                    } else {
+                        displayValue = value;
+                    }
+
+                    const displayKey = key.charAt(0).toUpperCase() + key.slice(1);
+
+                    html += `<div class="p-stat-row"><span class="p-stat-label">${displayKey}</span><span class="p-stat-val" style="font-size:13px;">${displayValue}</span></div>`;
+                }
+
+                contentBox.innerHTML = html;
+            } else {
+                contentBox.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>데이터를 찾을 수 없습니다.<br>(Data Not Found)</div>";
+            }
+        }
+
+        function closeNeneDataModal() {
+            if (neneDataInterval) clearInterval(neneDataInterval);
+            closeModal('neneDataModal');
+        }
+
+        let pendingAction = null; let pendingTarget = "";
+        function askAction(a, d) { pendingAction = a; pendingTarget = currentDetailPlayer; document.getElementById('actionConfirmText').innerHTML = `${currentTranslations.modal_del_msg} <b style="color:white">${pendingTarget}</b><br>Action: <b>${d}</b>`; openModal('actionConfirmModal'); }
+        async function confirmAction() { closeModal('actionConfirmModal'); if (!pendingAction || !pendingTarget) return; let c = ""; if (pendingAction === 'op') c = `op ${pendingTarget}`; else if (pendingAction === 'deop') c = `deop ${pendingTarget}`; else if (pendingAction === 'kick') c = `kick ${pendingTarget} Kicked`; else if (pendingAction === 'ban') c = `ban ${pendingTarget} Banned`; if (c) { await eel.send_command_py(c)(); showToast("Command Sent", "success"); if (pendingAction === 'kick' || pendingAction === 'ban') closeModal('playerDetailModal'); } pendingAction = null; }
+        let currentListType = "";
+        async function openListManager(t) { currentListType = t; const tr = currentTranslations; if (t === 'whitelist') document.getElementById('listTitle').innerText = tr.btn_whitelist; else if (t === 'banlist') document.getElementById('listTitle').innerText = tr.btn_banlist; else document.getElementById('listTitle').innerText = "IP 차단 관리"; document.getElementById('listInput').value = ""; openModal('listManagerModal'); await refreshListManager(); }
+        async function refreshListManager() { const c = document.getElementById('listContainer'); c.innerHTML = "..."; const l = await eel.get_manage_list_py(currentListType)(); c.innerHTML = ""; if (l.length === 0) { c.innerHTML = "<div style='color:#666; text-align:center; padding:20px;'>Empty</div>"; return; } const tr = currentTranslations; const b = tr.btn_delete || "Delete"; l.forEach(n => { let ct = 'remove'; if (currentListType === 'banlist') ct = 'pardon'; else if (currentListType === 'ip-banlist') ct = 'pardon-ip'; const d = document.createElement('div'); d.className = 'list-item'; d.innerHTML = `<span>${n}</span> <button class="list-btn-s" onclick="modifyList('${ct}', '${n}')">${b}</button>`; c.appendChild(d); }); }
+        async function addItemToList() { const n = document.getElementById('listInput').value; if (!n) return; let c = ""; if (currentListType === 'whitelist') c = `whitelist add ${n}`; else if (currentListType === 'banlist') c = `ban ${n}`; else if (currentListType === 'ip-banlist') c = `ban-ip ${n}`; eel.send_command_py(c); document.getElementById('listInput').value = ""; showToast("Added", "info"); setTimeout(refreshListManager, 1000); }
+        async function modifyList(a, n) { let c = ""; if (a === 'remove') c = `whitelist remove ${n}`; else if (a === 'pardon') c = `pardon ${n}`; else if (a === 'pardon-ip') c = `pardon-ip ${n}`; eel.send_command_py(c); showToast("Removed", "info"); setTimeout(refreshListManager, 1000); }
+        eel.expose(update_status_js);
+        function update_status_js(isOn) {
+            if (isOn) {
+                document.getElementById('statusText').innerText = "ONLINE"; document.getElementById('statusSimple').innerText = "Running"; document.getElementById('statusSimple').style.color = "#00e676";
+                document.getElementById('btnStart').classList.add('hidden'); document.getElementById('btnStop').classList.remove('hidden'); document.getElementById('btnRestart').classList.remove('hidden');
+                if (eel.get_public_ip_py) eel.get_public_ip_py()().then(ip => document.getElementById('publicIp').innerText = ip);
+            } else {
+                document.getElementById('statusText').innerText = "OFFLINE"; document.getElementById('statusSimple').innerText = "Stopped"; document.getElementById('statusSimple').style.color = "#ff5252";
+                document.getElementById('btnStart').classList.remove('hidden'); document.getElementById('btnStop').classList.add('hidden'); document.getElementById('btnRestart').classList.add('hidden');
+            }
+            refreshServerList();
+        }
+        eel.expose(add_log_js);
+        function add_log_js(m) { const l = document.getElementById('logs'); l.innerHTML += `<div>${m}</div>`; l.scrollTop = l.scrollHeight; }
+        eel.expose(restore_logs_js);
+        function restore_logs_js(arr) { const l = document.getElementById('logs'); l.innerHTML = ""; arr.forEach(m => l.innerHTML += `<div>${m}</div>`); l.scrollTop = l.scrollHeight; }
+        eel.expose(showToast);
+        function showToast(m, t = 'info') { const c = document.getElementById('toast-container'); const e = document.createElement('div'); e.className = `toast ${t}`; e.innerText = m; c.appendChild(e); setTimeout(() => e.remove(), 3000); }
+        eel.expose(update_cpu_usage_js);
+        function update_cpu_usage_js(p) { const e = document.getElementById('sysCpu'); if (e) e.innerText = p + "%"; }
+        eel.expose(update_download_progress_js);
+        // [수정] 진행률 표시 로직 개선 및 백엔드 노출
+        eel.expose(update_download_progress_js);
+        function update_download_progress_js(t) {
+            const b = document.getElementById('btnCreateReal');
+            if (b) {
+                b.disabled = true;
+                b.style.cursor = "not-allowed";
+                b.innerText = t;
+            }
+        }
+        eel.expose(remote_refresh_js);
+        function remote_refresh_js() {
+            location.reload();
+        }
+        eel.expose(update_restore_progress_js);
+        function update_restore_progress_js(percent, currentFile) {
+            const area = document.getElementById('restoreProgressArea');
+            const bar = document.getElementById('restoreProgressBar');
+            const text = document.getElementById('restoreProgressText');
+            const fileLabel = document.getElementById('restoreCurrentFile');
+            if (area) area.classList.remove('hidden');
+            if (bar) bar.style.width = percent + '%';
+            if (text) text.innerText = percent + '%';
+            if (fileLabel) fileLabel.innerText = currentFile || '-';
+        }
+        function openBackupRestoreModal() {
+            if (!currentSelectedServerName) return showToast("서버를 선택하세요", "error");
+            openModal('backupRestoreModal');
+            loadBackupList();
+        }
+        async function loadBackupList() {
+            if (!currentSelectedServerName) return showToast("서버를 선택하세요", "error");
+            const container = document.getElementById('backupListContainer');
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:#666; font-size:12px;">' + (currentTranslations["status_loading"] || "Loading...") + '</div>';
+            const list = await eel.list_backups_py(currentSelectedServerName)();
+            container.innerHTML = '';
+            if (!list || list.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#666; font-size:12px;">' + (currentTranslations["msg_no_backups"] || "백업이 없습니다") + '</div>';
+                return;
+            }
+            list.forEach(b => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:6px 8px; border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; border-radius:4px;';
+                const restoreLabel = currentTranslations["btn_restore"] || "복구";
+                div.innerHTML = `<div style="flex:1; min-width:0;"><div style="font-size:12px; color:#ccc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${b.filename}</div><div style="font-size:10px; color:#888;">${b.date} · ${b.size_mb}MB</div></div><button class="btn" style="padding:4px 8px; font-size:11px; background:rgba(255,152,0,0.1); border:1px solid rgba(255,152,0,0.3); color:var(--accent-orange); flex-shrink:0;" onclick="restoreBackup('${b.filename}')">${restoreLabel}</button>`;
+                container.appendChild(div);
+            });
+        }
+        let pendingRestoreFile = "";
+        function restoreBackup(filename) {
+            if (!currentSelectedServerName) return;
+            pendingRestoreFile = filename;
+            const msg = (currentTranslations["msg_restore_confirm"] || "정말 복구하시겠습니까? 현재 서버 파일은 모두 삭제됩니다.").replace("{filename}", filename);
+            document.getElementById('restoreConfirmMsg').innerText = msg;
+            openModal('restoreConfirmModal');
+        }
+        async function executeRestoreBackup() {
+            closeModal('restoreConfirmModal');
+            if (!pendingRestoreFile) return;
+            const area = document.getElementById('restoreProgressArea');
+            area.classList.remove('hidden');
+            document.getElementById('restoreProgressBar').style.width = '0%';
+            document.getElementById('restoreProgressText').innerText = '0%';
+            document.getElementById('restoreCurrentFile').innerText = currentTranslations["status_starting"] || "Starting...";
+            await eel.restore_backup_py(currentSelectedServerName, pendingRestoreFile)();
+        }
+        function sendWhisperReal() { let m = document.getElementById('whisperInput').value; if (!m) return showToast("내용 입력", "error"); eel.send_command_py(`tell ${currentDetailPlayer} ${m}`); showToast("전송 완료", "success"); closeModal('whisperModal'); }
+        function sendBroadcast(t) { let m = "", c = ""; if (t === 'title') { m = document.getElementById('bcTitleInput').value; c = `title @a title "${m}"`; } else if (t === 'subtitle') { m = document.getElementById('bcSubtitleInput').value; c = `title @a subtitle "${m}"`; } else if (t === 'actionbar') { m = document.getElementById('bcActionbarInput').value; c = `title @a actionbar "${m}"`; } else if (t === 'title_clear') { c = `title @a clear`; document.getElementById('bcTitleInput').value = ""; } if (c) eel.send_command_py(c); showToast("전송/설정 완료", "success"); }
+        async function openFolder(t) { if (!currentSelectedServerName) return; await eel.open_folder_py(currentSelectedServerName, t)(); showToast("폴더 열림", "success"); }
+        function openTpModal() { const t = globalPlayerList.filter(p => p !== currentDetailPlayer); const c = document.getElementById('tpList'); c.innerHTML = ""; if (t.length === 0) { c.innerHTML = "<div style='text-align:center; color:#666; padding: 10px 0;'>선택 가능한 플레이어가 없습니다.</div>"; } else { t.forEach(n => { c.innerHTML += `<div class="list-item"><span>${n}</span> <button class="list-btn-s" onclick="teleportTo('${n}')">이동</button></div>`; }); } openModal('tpModal'); }
+        function teleportTo(t) { eel.send_command_py(`tp ${currentDetailPlayer} ${t}`); showToast("이동함", "success"); closeModal('tpModal'); }
+        function openBanOptionModal() { closeModal('playerDetailModal'); openModal('banOptionModal'); }
+        async function executeBan(t) { let c = ""; const tg = currentDetailPlayer; if (t === 'name') c = `ban ${tg} Banned`; else if (t === 'ip') c = `ban-ip ${tg} IP Banned`; else if (t === 'both') { await eel.send_command_py(`ban ${tg}`)(); await eel.send_command_py(`ban-ip ${tg}`)(); closeModal('banOptionModal'); showToast("Banned", "success"); return; } if (c) { eel.send_command_py(c); showToast("Banned", "success"); } closeModal('banOptionModal'); }
+        function openGamemodeModal() { document.getElementById('gmTarget').innerText = currentDetailPlayer; openModal('gamemodeModal'); }
+        function executeGamemode(m) { eel.send_command_py(`gamemode ${m} ${currentDetailPlayer}`); closeModal('gamemodeModal'); }
+        function cleanServerNameInput(i) { i.value = i.value.replace(/[<>:"/\\|?*]/g, ''); }
+        function askStop() { openModal('stopConfirmModal'); }
+        function executeStop() { sendCommand('stop'); closeModal('stopConfirmModal'); }
+        function askRestart() { openModal('restartConfirmModal'); }
+        function executeRestart() { sendCommand('stop'); showToast("Restarting...", "info"); closeModal('restartConfirmModal'); setTimeout(() => startServer(), 5000); }
+
+        async function refreshPluginList() {
+            const container = document.getElementById('pluginList');
+            container.innerHTML = "...";
+            const list = await eel.get_plugin_list_py()();
+            container.innerHTML = "";
+
+            if (list.length === 0) {
+                container.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>No plugins found.</div>";
+                return;
+            }
+
+            list.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'plugin-item';
+
+                const infoArea = document.createElement('div');
+                infoArea.className = 'plugin-info-area';
+                infoArea.onclick = () => openPluginDetail(p.filename);
+                infoArea.innerHTML = `<i class="ph ph-plug" style="color:var(--accent-orange); font-size:22px;"></i> <span>${p.name}</span>`;
+
+                const switchLabel = document.createElement('label');
+                switchLabel.className = 'switch';
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.checked = p.enabled;
+                input.onchange = () => togglePlugin(p.filename, input.checked);
+
+                const slider = document.createElement('span');
+                slider.className = 'slider';
+
+                switchLabel.appendChild(input);
+                switchLabel.appendChild(slider);
+
+                div.appendChild(infoArea);
+                div.appendChild(switchLabel);
+                container.appendChild(div);
+            });
+        }
+
+        async function togglePlugin(filename, isChecked) {
+            const res = await eel.toggle_plugin_py(filename, isChecked)();
+            if (res.includes("✅")) {
+                showToast(res, "success");
+                refreshPluginList();
+            } else {
+                showToast(res, "error");
+                refreshPluginList();
+            }
+        }
+
+        let currentPluginFile = "";
+        function openPluginDetail(filename) {
+            currentPluginFile = filename;
+            document.getElementById('plDetailName').innerText = filename;
+            openModal('pluginDetailModal');
+        }
+
+        async function confirmDeletePlugin() {
+            closeModal('pluginDetailModal');
+            const res = await eel.delete_plugin_py(currentPluginFile)();
+            if (res.includes("✅")) {
+                showToast("Plugin Deleted", "success");
+                refreshPluginList();
+            } else {
+                showToast(res, "error");
+            }
+        }
+
+        async function loadServerInfo() {
+            const info = await eel.get_server_extended_info_py()();
+            if (info) {
+                document.getElementById('infoCreated').innerText = info.created_at;
+                document.getElementById('infoSource').innerText = info.source_url;
+                document.getElementById('infoSize').innerText = info.disk_usage;
+                document.getElementById('infoJava').innerText = info.java_version;
+                document.getElementById('infoPlayers').innerText = info.player_count + " 명";
+            }
+        }
+
+        async function openServerJavaManager() {
+            const currentPath = document.getElementById('java_path').value || "java";
+            openModal('javaManagerModal');
+            document.getElementById('javaManagerContextMsg').innerText = "현재 서버 인스턴스에 할당할 Java 런타임을 아래에서 선택하세요.";
+            await loadJavaList(currentPath);
+        }
+
+        async function loadJavaList(targetPath = "") {
+            const container = document.getElementById('javaListContainer');
+            container.innerHTML = "<div style='text-align:center; padding:20px; color:#666;'>검색 중... (Scanning)</div>";
+
+            let list;
+            try {
+                list = await eel.scan_java_versions_py(targetPath)();
+            } catch (err) {
+                container.innerHTML = "<div style='text-align:center; padding:20px; color:#f44336;'>오류 발생: " + err.message + "</div>";
+                return;
+            }
+            container.innerHTML = "";
+
+            if (!list || list.length === 0) {
+                container.innerHTML = "<div style='text-align:center; padding:20px; color:#666;'>설치된 자바를 발견하지 못했습니다.</div>";
+                return;
+            }
+
+            list.forEach(java => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.style.padding = "16px";
+                item.style.flexDirection = "column";
+                item.style.alignItems = "flex-start";
+                item.style.gap = "6px";
+
+                let statusHtml = "";
+                let btnHtml = "";
+                let bgStyle = "";
+
+                if (java.is_current) {
+                    bgStyle = "background: rgba(0, 230, 118, 0.05); border: 1px solid rgba(0, 230, 118, 0.25);";
+                    statusHtml = `<span style="font-size:11px; color:var(--accent-green); font-weight:700; margin-bottom:4px;">● 사용 중 (Current Server)</span>`;
+                    btnHtml = `<span style="font-size:12px; color:var(--text-sub); font-weight:700;">현재 적용됨</span>`;
+                } else {
+                    bgStyle = "background: rgba(255, 255, 255, 0.01);";
+                    statusHtml = `<span style="font-size:11px; color:#64748b;">설치됨 (Installed)</span>`;
+                    btnHtml = `<button class="btn btn-blue" style="padding: 6px 14px; font-size:12px; box-shadow:none;" onclick="applyJavaPath('${java.path.replace(/\\/g, '\\\\')}')">적용하기</button>`;
+                }
+
+                item.style.cssText += bgStyle;
+
+                item.innerHTML = `
+                    <div style="width:100%; display:flex; justify-content:space-between; align-items:start;">
+                        <div style="flex: 1; padding-right: 15px;">
+                            ${statusHtml}
+                            <div style="font-weight:800; font-size:15px; color:#fff; margin-top: 2px;">Java ${java.version}</div>
+                            <div style="font-size:12px; color:var(--text-sub); margin-top:5px; word-break:break-all; font-family:'Fira Code', 'Consolas', monospace;">${java.path}</div>
+                        </div>
+                        <div style="margin-top: 5px;">
+                            ${btnHtml}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        let pendingJavaPath = "";
+
+        function applyJavaPath(path) {
+            pendingJavaPath = path;
+            openModal('javaApplyConfirmModal');
+        }
+
+        async function executeJavaPathChange() {
+            closeModal('javaApplyConfirmModal');
+            closeModal('javaManagerModal');
+            if (!pendingJavaPath) return;
+
+            const javaInput = document.getElementById('java_path');
+            if (javaInput) {
+                javaInput.value = pendingJavaPath;
+                await saveSettings();
+            }
+        }
+
+        function askKillJava() {
+            closeModal('javaHelpModal');
+            openModal('killJavaConfirmModal');
+        }
+
+        async function executeKillJava() {
+            closeModal('killJavaConfirmModal');
+            const res = await eel.kill_all_java_processes_py()();
+            if (res.includes("✅")) {
+                showToast(res, "success");
+            } else {
+                showToast(res, "error");
+            }
+        }
+
+        // ==========================================================
+        // [추가] 원격 제어 (베타) 관련 JavaScript 제어부
+        // ==========================================================
+        async function openRemoteSettingsPopup() {
+            closeModal('launcherSettingsModal');
+            openModal('remoteControlSettingsModal'); setTimeout(refreshAccessLogs, 100);
+
+            // 1. 공인 IP 호출 및 링크 출력 구성
+            let ip = "Checking...";
+            try {
+                if (eel.get_public_ip_py) {
+                    ip = await eel.get_public_ip_py()();
+                }
+            } catch {
+                ip = window.location.hostname;
+            }
+            document.getElementById('remoteAddressLink').innerText = `http://${ip}:8000/index.html`;
+
+            // 2. 기존 설정 연동
+            const c = await eel.get_launcher_config_py()();
+            document.getElementById('remote_control_enabled_checkbox').checked = (c.remote_enabled === true);
+            document.getElementById('remote_control_password_input').value = "";
+        }
+
+        async function refreshAccessLogs() {
+            const container = document.getElementById('accessLogContainer');
+            if (!container) return;
+            try {
+                const logs = await eel.get_access_logs_py()();
+                if (!logs || logs.length === 0) {
+                    container.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">기록 없음</div>';
+                    return;
+                }
+                let html = '<table style="width:100%; border-collapse: collapse;">';
+                html += '<tr style="color: var(--accent-cyan); border-bottom: 1px solid rgba(255,255,255,0.1);"><th style="padding:4px 6px; text-align:left;">시간</th><th style="padding:4px 6px; text-align:left;">IP</th><th style="padding:4px 6px; text-align:left;">행동</th><th style="padding:4px 6px; text-align:left;">결과</th><th style="padding:4px 6px; text-align:left;">상세</th></tr>';
+                logs.forEach(l => {
+                    const color = l.result === 'success' ? '#00e676' : l.result === 'blocked' || l.result === 'fail' ? '#ff5252' : '#ffab40';
+                    html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                        <td style="padding:4px 6px; color:#888;">${l.time}</td>
+                        <td style="padding:4px 6px; color:#aaa;">${l.ip}</td>
+                        <td style="padding:4px 6px; color:#ddd;">${l.action}</td>
+                        <td style="padding:4px 6px; color:${color};">${l.result}</td>
+                        <td style="padding:4px 6px; color:#999; font-size:10px;">${l.detail || ''}</td>
+                    </tr>`;
+                });
+                html += '</table>';
+                container.innerHTML = html;
+                container.scrollTop = 0;
+            } catch(e) {
+                container.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">로드 실패</div>';
+            }
+        }
+        function copyRemoteAddress() {
+            const el = document.getElementById('remoteAddressLink');
+            if (!el || !el.innerText || el.innerText === '불러오는 중...') return;
+            navigator.clipboard.writeText(el.innerText).then(() => {
+                showToast("📋 주소가 복사되었습니다.", "success");
+            }).catch(() => {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                const sel = window.getSelection();
+                sel.removeAllRanges(); sel.addRange(range);
+                document.execCommand('copy');
+                sel.removeAllRanges();
+                showToast("📋 주소가 복사되었습니다.", "success");
+            });
+        }
+
+        async function saveRemoteControlConfig() {
+            const isEnabled = document.getElementById('remote_control_enabled_checkbox').checked;
+            const newPassword = document.getElementById('remote_control_password_input').value;
+
+            const result = await eel.save_remote_setting_py(isEnabled, newPassword)();
+            if (result.includes("✅")) {
+                closeModal('remoteControlSettingsModal');
+                openModal('restartAppModal');
+            } else {
+                showToast(result, "error");
+            }
+        }
+
+        async function executeAppRestart() {
+            // 버튼 비활성화 (중복 클릭 방지)
+            const btn = document.getElementById('btnAutoRestart');
+            if (btn) btn.disabled = true;
+
+            showToast("런처를 재시작하는 중...", "info");
+
+            // 파이썬 측에 재시작 명령 전달
+            await eel.restart_launcher_py()();
+        }
+
+        // 원격 락 스크린 활성여부 분석 함수
+        async function checkRemoteLockScreen() {
+            const config = await eel.get_launcher_config_py()();
+            if (config && config.remote_enabled === true) {
+                // 로컬 전용 토큰이 이미 있는 경우 (localhost 접속) 즉시 통과
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('token')) return;
+                // 이미 인증된 세션이면 통과
+                if (window.isEelAuthenticated()) return;
+
+                // 인증되지 않은 경우 강제로 락스크린 모달 노출
+                openModal('remoteLockScreenModal');
+            }
+        }
+
+        async function verifyRemoteLockAuth() {
+            const passInput = document.getElementById('remote_auth_password_input');
+            const passValue = passInput.value;
+            const msgEl = document.getElementById('remoteAuthAttemptMsg');
+
+            const result = await eel.verify_remote_password_py(passValue)();
+            if (result && result.success) {
+                window.setEelSessionToken(result.token);
+
+                showToast("Authentication successful", "success");
+
+                closeModal('accessRestrictedModal');
+                closeModal('remoteLockScreenModal');
+
+                initApp();
+            } else {
+                const remaining = result ? result.remaining : 0;
+                if (remaining <= 0) {
+                    msgEl.innerText = "Please try again later.";
+                } else {
+                    msgEl.innerText = (5 - remaining) + " / 5 attempts failed. " + remaining + " attempts remaining.";
+                }
+                passInput.value = "";
+                passInput.focus();
+            }
+        }
+
+        function checkRemoteAuthEnter(e) {
+            if (e.key === 'Enter') {
+                verifyRemoteLockAuth();
+            }
+        }
+    </script>
+</body>
+
+</html>
