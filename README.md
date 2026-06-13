@@ -63,7 +63,7 @@ Special thanks to the open source libraries and services that made this project 
 
 * **[requests](https://requests.readthedocs.io/):** A simple yet elegant HTTP library for communication and file downloads.
 
-This program uses the open source library pystray (LGPLv3/BSD).
+*  This program uses the open source library pystray (LGPLv3/BSD).
 
 ### **Frontend (Web)**
 
