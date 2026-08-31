@@ -7,7 +7,7 @@ import threading
 # (원래 launcher.py 최상단 전역 변수들을 한 곳으로 모음)
 # ==========================================================
 
-AYA_VERSION = "4.2.2"
+AYA_VERSION = "4.2.3"
 AYA_BASE = "AYA_data"
 DEFAULT_JAVA = "java"
 BASE_SERVERS_DIR = os.path.join(AYA_BASE, "servers")
