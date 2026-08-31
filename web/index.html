@@ -389,6 +389,27 @@
             </div>
         </div>
 
+        <!-- 업데이트 모달 -->
+        <div id="updateModal" class="modal-overlay">
+            <div class="modal" style="width: 420px; border-color: var(--accent-green);">
+                <h3 style="color: var(--accent-green);">🔄 업데이트</h3>
+                <div id="updateContent" style="text-align: center; padding: 20px 0;">
+                    <div id="updateStatus" style="color: var(--text-sub); font-size: 14px;">업데이트를 확인하는 중...</div>
+                    <div id="updateProgress" style="display:none; margin-top: 20px;">
+                        <div style="background: rgba(255,255,255,0.05); border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 10px;">
+                            <div id="updateProgressBar" style="background: var(--accent-green); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                        </div>
+                        <div id="updatePercent" style="color: var(--text-sub); font-size: 12px;">0%</div>
+                    </div>
+                    <div id="updateNotes" style="display:none; text-align: left; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; margin-top: 15px; max-height: 150px; overflow-y: auto; font-size: 12px; color: var(--text-sub);"></div>
+                </div>
+                <div class="modal-btn-group">
+                    <button class="btn" id="updateCloseBtn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); display:none;" onclick="closeModal('updateModal')">닫기</button>
+                    <button class="btn btn-blue" id="updateDownloadBtn" style="display:none;" onclick="downloadUpdate()">다운로드 및 적용</button>
+                </div>
+            </div>
+        </div>
+
         <div id="updateCoreConfirmModal" class="modal-overlay">
             <div class="modal" style="border-color:#ff9800;">
                 <h3 style="color:#ff9800;" data-i18n="title_update_core">⬆️ 서버 코어 버전 변경</h3>
@@ -926,6 +947,14 @@
                     onclick="openModal('javaHelpModal')">
                     <span style="color: var(--accent-red)" data-i18n="btn_java_kill_tool">🛠️ 자바 강제 종료 도구</span>
                     <i class="bi bi-x-octagon" style="color: var(--accent-red)"></i>
+                </button>
+
+                <label class="modal-label" style="margin-top:15px;">업데이트</label>
+                <button class="btn" id="updateCheckBtn"
+                    style="background: rgba(63, 185, 80, 0.05); border: 1px solid rgba(63, 185, 80, 0.2); width: 100%; display:flex; justify-content:space-between; align-items:center;"
+                    onclick="checkUpdate()">
+                    <span style="color: var(--accent-green)">🔄 업데이트 확인</span>
+                    <i class="bi bi-cloud-download" style="color: var(--accent-green)"></i>
                 </button>
 
                 <div

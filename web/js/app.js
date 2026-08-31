@@ -1375,3 +1375,82 @@
                 msg.textContent = "❌ " + (r.error || "변경 실패"); msg.className = "tunnel-msg error";
             }
         }
+
+        // ==========================================================
+        // [UPDATE] OTA 업데이트 로직
+        // ==========================================================
+        let _updateData = null;
+        let _updatePollTimer = null;
+
+        async function checkUpdate() {
+            openModal('updateModal');
+            document.getElementById('updateStatus').textContent = '업데이트를 확인하는 중...';
+            document.getElementById('updateProgress').style.display = 'none';
+            document.getElementById('updateNotes').style.display = 'none';
+            document.getElementById('updateCloseBtn').style.display = 'none';
+            document.getElementById('updateDownloadBtn').style.display = 'none';
+            try {
+                const r = await eel.check_update_py()();
+                if (!r.success) {
+                    document.getElementById('updateStatus').textContent = '❌ 확인 실패: ' + (r.error || '알 수 없음');
+                    document.getElementById('updateCloseBtn').style.display = '';
+                    return;
+                }
+                _updateData = r;
+                if (!r.has_update) {
+                    document.getElementById('updateStatus').textContent = '✅ 최신 버전입니다 (v' + r.current_version + ')';
+                    document.getElementById('updateCloseBtn').style.display = '';
+                    return;
+                }
+                document.getElementById('updateStatus').innerHTML =
+                    '<span style="color:var(--accent-green);">새 버전 발견!</span><br>' +
+                    '<span style="font-size:12px; color:var(--text-sub);">v' + r.current_version + ' → v' + r.latest_version + '</span>';
+                if (r.release_notes) {
+                    document.getElementById('updateNotes').style.display = '';
+                    document.getElementById('updateNotes').innerHTML = '<strong>변경사항:</strong><br>' + r.release_notes.replace(/\n/g, '<br>');
+                }
+                document.getElementById('updateDownloadBtn').style.display = '';
+                document.getElementById('updateCloseBtn').style.display = '';
+            } catch (e) {
+                document.getElementById('updateStatus').textContent = '❌ 오류: ' + e.message;
+                document.getElementById('updateCloseBtn').style.display = '';
+            }
+        }
+
+        async function downloadUpdate() {
+            if (!_updateData || !_updateData.asset_url) return;
+            document.getElementById('updateDownloadBtn').style.display = 'none';
+            document.getElementById('updateProgress').style.display = '';
+            document.getElementById('updateStatus').textContent = '다운로드 중...';
+            try {
+                await eel.download_update_py(_updateData.asset_url, _updateData.asset_name)();
+                _updatePollTimer = setInterval(pollUpdateProgress, 500);
+            } catch (e) {
+                document.getElementById('updateStatus').textContent = '❌ 다운로드 실패: ' + e.message;
+                document.getElementById('updateCloseBtn').style.display = '';
+            }
+        }
+
+        async function pollUpdateProgress() {
+            try {
+                const p = await eel.get_update_progress_py()();
+                document.getElementById('updateProgressBar').style.width = p.percent + '%';
+                document.getElementById('updatePercent').textContent = p.percent + '%';
+                document.getElementById('updateStatus').textContent = p.status;
+                if (p.error) {
+                    clearInterval(_updatePollTimer);
+                    document.getElementById('updateStatus').textContent = '❌ ' + p.error;
+                    document.getElementById('updateCloseBtn').style.display = '';
+                }
+                if (!p.active && p.percent >= 100) {
+                    clearInterval(_updatePollTimer);
+                    document.getElementById('updateStatus').textContent = '✅ 다운로드 완료. 적용 중...';
+                    document.getElementById('updatePercent').textContent = '재시작합니다...';
+                    setTimeout(async () => {
+                        await eel.apply_update_py()();
+                    }, 1000);
+                }
+            } catch (e) {
+                clearInterval(_updatePollTimer);
+            }
+        }

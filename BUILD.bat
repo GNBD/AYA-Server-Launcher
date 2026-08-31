@@ -21,6 +21,7 @@ pyinstaller --noconsole --onefile --clean --icon="server.ico" ^
   --hidden-import core.tray ^
   --hidden-import core.tunnel ^
   --hidden-import core.tunnel_api ^
+  --hidden-import core.updater ^
   --hidden-import tkinter ^
   --hidden-import webview ^
   --collect-submodules webview ^

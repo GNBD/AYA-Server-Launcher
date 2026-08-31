@@ -5,6 +5,7 @@ import os
 _root = None
 _canvas = None
 _label = None
+_version = ""
 
 
 def _icon_path():
@@ -71,11 +72,18 @@ def _run():
     _label = canvas.create_text(W / 2, 205, text="", fill="#9aa6b0",
                                 font=("Malgun Gothic", 11))
 
+    # 버전 (오른쪽 하단)
+    if _version:
+        canvas.create_text(W - 12, H - 14, text=f"v{_version}", fill="#5b6b78",
+                           font=("Malgun Gothic", 9), anchor="se")
+
     _canvas = canvas
     _root.mainloop()
 
 
-def show_splash():
+def show_splash(version=""):
+    global _version
+    _version = version
     if not getattr(sys, "frozen", False):
         return
     t = threading.Thread(target=_run, daemon=True)

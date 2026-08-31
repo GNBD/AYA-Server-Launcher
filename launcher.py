@@ -3,6 +3,13 @@ import sys
 import os
 import splash_window
 
+# ── --update 플래그 처리 (업데이트 적용 모드) ──
+if "--update" in sys.argv:
+    from core import state
+    from core.updater import handle_update_mode
+    handle_update_mode()
+    sys.exit(0)
+
 def _is_already_running():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -19,7 +26,8 @@ def _is_already_running():
 if _is_already_running():
     sys.exit(0)
 
-splash_window.show_splash()
+from core import state
+splash_window.show_splash(version=state.AYA_VERSION)
 
 import eel
 import time
