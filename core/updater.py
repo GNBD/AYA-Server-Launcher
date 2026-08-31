@@ -54,7 +54,7 @@ def check_update_exe():
     time.sleep(3.0)
     splash_window.set_status("파일 교체 중...")
 
-    root_dir = os.path.dirname(update_dir)
+    root_dir = os.path.dirname(os.path.dirname(update_dir))
     dest = os.path.join(root_dir, "Server Launcher.exe")
     src = sys.executable if getattr(sys, "frozen", False) else __file__
 
