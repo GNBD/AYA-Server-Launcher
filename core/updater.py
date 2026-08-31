@@ -21,8 +21,15 @@ def _get_exe_dir():
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+def _get_root_dir():
+    exe_dir = _get_exe_dir()
+    if os.path.basename(exe_dir).lower() == "update" and os.path.basename(os.path.dirname(exe_dir)).lower() == "aya_data":
+        return os.path.dirname(os.path.dirname(exe_dir))
+    return exe_dir
+
+
 def _get_update_dir():
-    d = os.path.join(_get_exe_dir(), "AYA_data", "update")
+    d = os.path.join(_get_root_dir(), "AYA_data", "update")
     os.makedirs(d, exist_ok=True)
     return d
 
@@ -41,7 +48,7 @@ def cleanup_update_dir():
 
 
 def check_update_exe():
-    """AYA_data/update/에서 실행 중이면 루트에 복사 → 실행 → 종료. True 반환."""
+    """AYA_data/update/에서 실행 중이면 루트에 복사 → 실행 → 종료."""
     exe_dir = _get_exe_dir()
     update_dir = _get_update_dir()
     if os.path.normcase(exe_dir) != os.path.normcase(update_dir):
@@ -54,7 +61,7 @@ def check_update_exe():
     time.sleep(3.0)
     splash_window.set_status("파일 교체 중...")
 
-    root_dir = os.path.dirname(os.path.dirname(update_dir))
+    root_dir = _get_root_dir()
     dest = os.path.join(root_dir, "Server Launcher.exe")
     src = sys.executable if getattr(sys, "frozen", False) else __file__
 
