@@ -40,6 +40,53 @@ def cleanup_update_dir():
             pass
 
 
+def check_update_exe():
+    """AYA_data/update/에서 실행 중이면 루트에 복사 → 실행 → 종료. True 반환."""
+    exe_dir = _get_exe_dir()
+    update_dir = _get_update_dir()
+    if os.path.normcase(exe_dir) != os.path.normcase(update_dir):
+        return False
+
+    import splash_window
+    splash_window.show_splash(version=state.AYA_VERSION)
+    time.sleep(0.5)
+    splash_window.set_status("업데이트 진행중...")
+    time.sleep(3.0)
+    splash_window.set_status("파일 교체 중...")
+
+    root_dir = os.path.dirname(update_dir)
+    dest = os.path.join(root_dir, "Server Launcher.exe")
+    src = sys.executable if getattr(sys, "frozen", False) else __file__
+
+    success = False
+    for attempt in range(5):
+        try:
+            if os.path.exists(dest):
+                subprocess.run(["cmd", "/c", "del", "/f", "/q", f'"{dest}"'], capture_output=True, timeout=5)
+                time.sleep(0.5)
+            subprocess.run(["cmd", "/c", "copy /y", f'"{src}"', f'"{dest}"'], capture_output=True, timeout=30)
+            if os.path.exists(dest) and os.path.getsize(dest) > 1000000:
+                success = True
+                break
+        except Exception:
+            pass
+        time.sleep(1.0)
+
+    if not success:
+        splash_window.set_status("복사 실패!")
+        time.sleep(2)
+        splash_window.close_splash()
+        return True
+
+    splash_window.set_status("업데이트 완료! 재시작합니다...")
+    time.sleep(0.5)
+    splash_window.close_splash()
+
+    subprocess.Popen([dest])
+    os._exit(0)
+    return True
+
+
 def _compare_versions(current, latest):
     def parse(v):
         return [int(x) for x in v.strip("v").split(".")]
@@ -143,74 +190,13 @@ def get_update_progress_py(token):
 
 @eel.expose
 def apply_update_py(token):
-    """AYA_data/update/ exe를 --update + --old-pid로 실행. 기존은 즉시 종료 안 함."""
+    """AYA_data/update/에 있는 새 exe를 실행. 다음 시작 시 자동으로 루트에 복사됨."""
     update_exe = os.path.join(_get_update_dir(), "Server Launcher.exe")
     if not os.path.exists(update_exe):
         return {"success": False, "error": "업데이트 파일 없음"}
-    original_exe = sys.executable if getattr(sys, "frozen", False) else ""
-    if not original_exe:
-        return {"success": False, "error": "실행 파일 경로를 알 수 없습니다"}
     try:
-        my_pid = str(os.getpid())
-        subprocess.Popen([update_exe, "--update", original_exe, "--old-pid", my_pid])
-        return {"success": True}
+        subprocess.Popen([update_exe])
+        time.sleep(0.3)
+        os._exit(0)
     except Exception as e:
         return {"success": False, "error": str(e)}
-
-
-def handle_update_mode():
-    """--update: 스플래시 → 기존 PID kill → 메인에 복사 → 메인 실행 → 종료."""
-    if "--update" not in sys.argv:
-        return False
-    idx = sys.argv.index("--update")
-    original_path = sys.argv[idx + 1] if idx + 1 < len(sys.argv) else ""
-    if not original_path:
-        return False
-
-    old_pid = None
-    if "--old-pid" in sys.argv:
-        pid_idx = sys.argv.index("--old-pid")
-        if pid_idx + 1 < len(sys.argv):
-            old_pid = sys.argv[pid_idx + 1]
-
-    import splash_window
-    splash_window.show_splash(version=state.AYA_VERSION)
-    time.sleep(0.5)
-
-    splash_window.set_status("기존 프로세스 종료 중...")
-    if old_pid:
-        try:
-            subprocess.run(["taskkill", "/f", "/pid", old_pid], capture_output=True, timeout=5)
-        except Exception:
-            pass
-    time.sleep(1.5)
-
-    splash_window.set_status("파일 교체 중...")
-    src = sys.executable if getattr(sys, "frozen", False) else __file__
-    success = False
-    for attempt in range(5):
-        try:
-            if os.path.exists(original_path):
-                subprocess.run(["cmd", "/c", "del", "/f", "/q", f'"{original_path}"'], capture_output=True, timeout=5)
-                time.sleep(0.5)
-            subprocess.run(["cmd", "/c", "copy /y", f'"{src}"', f'"{original_path}"'], capture_output=True, timeout=30)
-            if os.path.exists(original_path) and os.path.getsize(original_path) > 1000000:
-                success = True
-                break
-        except Exception:
-            pass
-        time.sleep(1.0)
-
-    if not success:
-        splash_window.set_status("복사 실패!")
-        time.sleep(2)
-        splash_window.close_splash()
-        return True
-
-    splash_window.set_status("업데이트 완료! 재시작합니다...")
-    time.sleep(0.5)
-    splash_window.close_splash()
-
-    subprocess.Popen([original_path])
-    os._exit(0)
-    return True

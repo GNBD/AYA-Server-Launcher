@@ -3,11 +3,8 @@ import sys
 import os
 import splash_window
 
-# ── --update 플래그 처리 (업데이트 적용 모드) ──
-if "--update" in sys.argv:
-    from core import state
-    from core.updater import handle_update_mode
-    handle_update_mode()
+from core.updater import check_update_exe, cleanup_update_dir
+if check_update_exe():
     sys.exit(0)
 
 def _is_already_running():
