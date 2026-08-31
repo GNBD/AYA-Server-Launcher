@@ -27,6 +27,8 @@ if _is_already_running():
     sys.exit(0)
 
 from core import state
+from core.updater import cleanup_update_dir
+cleanup_update_dir()
 splash_window.show_splash(version=state.AYA_VERSION)
 
 import eel
@@ -34,7 +36,6 @@ import time
 import webbrowser
 import threading
 
-import core.state as state
 import core.security
 import core.common
 import core.config

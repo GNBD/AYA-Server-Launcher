@@ -1,6 +1,5 @@
 import os
 import sys
-import json
 import time
 import subprocess
 import threading
@@ -13,7 +12,6 @@ GITHUB_REPO = "GNBD/AYA-Server-Launcher"
 GITHUB_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 USER_AGENT = f"AYA-Server-Launcher/{state.AYA_VERSION}"
 
-# 다운로드 진행 상태
 _download_progress = {"active": False, "percent": 0, "status": "", "error": ""}
 
 
@@ -29,21 +27,30 @@ def _get_update_dir():
     return d
 
 
+def cleanup_update_dir():
+    update_dir = _get_update_dir()
+    if not os.path.isdir(update_dir):
+        return
+    for f in os.listdir(update_dir):
+        fp = os.path.join(update_dir, f)
+        try:
+            if os.path.isfile(fp):
+                os.remove(fp)
+        except Exception:
+            pass
+
+
 def _compare_versions(current, latest):
-    """current < latest 이면 True"""
     def parse(v):
         return [int(x) for x in v.strip("v").split(".")]
     try:
-        c = parse(current)
-        l = parse(latest)
-        return l > c
+        return parse(latest) > parse(current)
     except Exception:
         return False
 
 
 @eel.expose
 def check_update_py(token):
-    """GitHub에서 최신 릴리즈 확인. 새 버전 있으면 정보 반환."""
     try:
         headers = {"User-Agent": USER_AGENT, "Accept": "application/vnd.github+json"}
         r = requests.get(GITHUB_API, headers=headers, timeout=10)
@@ -77,22 +84,22 @@ def check_update_py(token):
 
 @eel.expose
 def download_update_py(token, asset_url, asset_name):
-    """새 버전을 AYA_data/update/에 다운로드. 진행 상태는 get_update_progress_py로 폴링."""
     if _download_progress["active"]:
         return {"success": False, "error": "이미 다운로드 중입니다"}
-
     _download_progress.update({"active": True, "percent": 0, "status": "다운로드 준비 중...", "error": ""})
 
     def _do():
+        import zipfile
+        import tempfile
         try:
             update_dir = _get_update_dir()
-            dest = os.path.join(update_dir, "Server Launcher.exe")
             headers = {"User-Agent": USER_AGENT}
             r = requests.get(asset_url, headers=headers, stream=True, timeout=30)
             r.raise_for_status()
             total = int(r.headers.get("content-length", 0))
             downloaded = 0
-            with open(dest, "wb") as f:
+            tmp_zip = os.path.join(tempfile.gettempdir(), "aya_update.zip")
+            with open(tmp_zip, "wb") as f:
                 for chunk in r.iter_content(chunk_size=1024 * 256):
                     if chunk:
                         f.write(chunk)
@@ -100,6 +107,22 @@ def download_update_py(token, asset_url, asset_name):
                         if total > 0:
                             _download_progress["percent"] = int(downloaded * 100 / total)
                             _download_progress["status"] = f"다운로드 중... {_download_progress['percent']}%"
+            _download_progress["status"] = "압축 해제 중..."
+            with zipfile.ZipFile(tmp_zip, "r") as zf:
+                exe_names = [n for n in zf.namelist() if n.endswith(".exe")]
+                if not exe_names:
+                    raise Exception("ZIP에 .exe 파일이 없습니다")
+                dest = os.path.join(update_dir, "Server Launcher.exe")
+                with zf.open(exe_names[0]) as src, open(dest, "wb") as dst:
+                    while True:
+                        buf = src.read(1024 * 256)
+                        if not buf:
+                            break
+                        dst.write(buf)
+            try:
+                os.remove(tmp_zip)
+            except Exception:
+                pass
             _download_progress["percent"] = 100
             _download_progress["status"] = "다운로드 완료"
         except Exception as e:
@@ -120,7 +143,7 @@ def get_update_progress_py(token):
 
 @eel.expose
 def apply_update_py(token):
-    """최신 버전 실행 (--update 플래그). 현재 프로세스는 종료."""
+    """AYA_data/update/ exe를 --update + --old-pid로 실행. 기존은 즉시 종료 안 함."""
     update_exe = os.path.join(_get_update_dir(), "Server Launcher.exe")
     if not os.path.exists(update_exe):
         return {"success": False, "error": "업데이트 파일 없음"}
@@ -128,15 +151,15 @@ def apply_update_py(token):
     if not original_exe:
         return {"success": False, "error": "실행 파일 경로를 알 수 없습니다"}
     try:
-        subprocess.Popen([update_exe, "--update", original_exe])
-        time.sleep(0.5)
-        os._exit(0)
+        my_pid = str(os.getpid())
+        subprocess.Popen([update_exe, "--update", original_exe, "--old-pid", my_pid])
+        return {"success": True}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 
 def handle_update_mode():
-    """--update 플래그로 실행된 경우: 기존 프로세스 종료 → 자기 복사 → 재시작. True 반환."""
+    """--update: 스플래시 → 기존 PID kill → 메인에 복사 → 메인 실행 → 종료."""
     if "--update" not in sys.argv:
         return False
     idx = sys.argv.index("--update")
@@ -144,75 +167,50 @@ def handle_update_mode():
     if not original_path:
         return False
 
+    old_pid = None
+    if "--old-pid" in sys.argv:
+        pid_idx = sys.argv.index("--old-pid")
+        if pid_idx + 1 < len(sys.argv):
+            old_pid = sys.argv[pid_idx + 1]
+
     import splash_window
     splash_window.show_splash(version=state.AYA_VERSION)
-    splash_window.set_status("업데이트 진행중...")
+    time.sleep(0.5)
 
-    time.sleep(1.0)
+    splash_window.set_status("기존 프로세스 종료 중...")
+    if old_pid:
+        try:
+            subprocess.run(["taskkill", "/f", "/pid", old_pid], capture_output=True, timeout=5)
+        except Exception:
+            pass
+    time.sleep(1.5)
 
-    # 기존 프로세스 종료
-    current_exe = os.path.abspath(sys.executable) if getattr(sys, "frozen", False) else None
-    if current_exe and os.path.normcase(os.path.normpath(original_path)) != os.path.normcase(os.path.normpath(current_exe)):
-        _kill_process_by_path(original_path)
+    splash_window.set_status("파일 교체 중...")
+    src = sys.executable if getattr(sys, "frozen", False) else __file__
+    success = False
+    for attempt in range(5):
+        try:
+            if os.path.exists(original_path):
+                subprocess.run(["cmd", "/c", "del", "/f", "/q", f'"{original_path}"'], capture_output=True, timeout=5)
+                time.sleep(0.5)
+            subprocess.run(["cmd", "/c", "copy /y", f'"{src}"', f'"{original_path}"'], capture_output=True, timeout=30)
+            if os.path.exists(original_path) and os.path.getsize(original_path) > 1000000:
+                success = True
+                break
+        except Exception:
+            pass
         time.sleep(1.0)
 
-    # 자기 자신을 원래 경로로 복사
-    src = sys.executable if getattr(sys, "frozen", False) else __file__
-    try:
-        _copy_file(src, original_path)
-    except Exception as e:
-        splash_window.set_status(f"복사 실패: {e}")
-        time.sleep(3)
+    if not success:
+        splash_window.set_status("복사 실패!")
+        time.sleep(2)
         splash_window.close_splash()
         return True
 
+    splash_window.set_status("업데이트 완료! 재시작합니다...")
+    time.sleep(0.5)
     splash_window.close_splash()
 
-    # 새 버전 실행
     subprocess.Popen([original_path])
     os._exit(0)
     return True
-
-
-def _kill_process_by_path(exe_path):
-    """경로로 실행 중인 프로세스를 찾 종료."""
-    try:
-        norm = os.path.normcase(os.path.normpath(exe_path))
-        for proc in os.scandir("/proc") if sys.platform == "linux" else _win32_kill_by_name(os.path.basename(exe_path)):
-            pass
-    except Exception:
-        pass
-
-
-def _win32_kill_by_name(name):
-    """Windows에서 프로세스 이름으로 종료."""
-    try:
-        result = subprocess.run(
-            ["taskkill", "/f", "/im", name],
-            capture_output=True, timeout=5
-        )
-    except Exception:
-        pass
-
-
-def _copy_file(src, dst):
-    """Windows에서 파일 복사 (기존 파일 덮어쓰기)."""
-    dst_dir = os.path.dirname(dst)
-    os.makedirs(dst_dir, exist_ok=True)
-    # Windows: 덮어쓰기 전 잠시 대기
-    for attempt in range(3):
-        try:
-            if os.path.exists(dst):
-                # 기존 파일 삭제 시도
-                try:
-                    os.remove(dst)
-                except PermissionError:
-                    subprocess.run(["cmd", "/c", "del", "/f", "/q", f'"{dst}"'], capture_output=True, timeout=5)
-                    time.sleep(0.5)
-            # 복사
-            subprocess.run(["cmd", "/c", 'copy /y', f'"{src}"', f'"{dst}"'], capture_output=True, timeout=30)
-            if os.path.exists(dst):
-                return
-        except Exception:
-            time.sleep(1)
-    raise Exception("파일 복사 실패 (3회 시도)")
