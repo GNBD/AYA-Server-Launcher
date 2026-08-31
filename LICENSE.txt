@@ -1,0 +1,204 @@
+==============================
+Third‑Party Licenses
+==============================
+
+This project uses the following third‑party libraries. Their licenses are listed below.
+You must include this LICENSE.txt (or equivalent) when distributing the application, 
+to comply with their license terms.
+
+Libraries:
+- eel
+- Pillow (PIL / Pillow)
+- pystray
+- requests
+- psutil
+- Python Standard Library (sys, os, subprocess, threading, re, shutil, json, datetime, time, zipfile, webbrowser)
+
+---
+
+===============================================================================
+1) eel — MIT License
+===============================================================================
+
+MIT License
+
+Copyright (c) 2015-2025 Chris Willis
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+---
+
+===============================================================================
+2) Pillow (PIL / Historical Permission Notice and Disclaimer)
+===============================================================================
+
+Historical Permission Notice and Disclaimer
+
+Copyright (c) 2010-2021 by Alex Clark and contributors.  
+Copyright (c) 1995-2000 by Secret Labs AB and contributors.  
+All rights reserved.
+
+By obtaining, using, and/or copying this software and/or its associated
+documentation for any purpose and without fee is hereby granted, provided
+that the above copyright notice appears in all copies, and that both
+that copyright notice and this permission notice appear in supporting
+documentation, and that the name of Secret Labs AB or the author not be
+used in advertising or publicity pertaining to distribution of the software
+without specific, written prior permission.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+Note: This reflects the “Historical Permission Notice and Disclaimer” (HPND),
+used by PIL and its friendly fork Pillow. 0
+
+---
+
+===============================================================================
+3) pystray — MIT License
+===============================================================================
+
+MIT License
+
+Copyright (c) 2016-2025 Marc-Andre Lureau
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+---
+
+===============================================================================
+4) requests — Apache License 2.0
+===============================================================================
+
+Apache License  
+Version 2.0, January 2004  
+http://www.apache.org/licenses/LICENSE-2.0  
+
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION:
+
+1. Definitions.  
+   “License” shall mean the terms and conditions for use, reproduction, and distribution.
+
+2. Grant of Copyright License.  
+   Subject to the terms and conditions of this License, each Contributor hereby grants You a  
+   worldwide, royalty-free, non‑exclusive, perpetual, irrevocable copyright license to reproduce,  
+   prepare Derivative Works of, publicly display, publicly perform, sublicense, and distribute  
+   the Work and such Derivative Works.
+
+3. Grant of Patent License.  
+   Subject to the terms and conditions of this License, each Contributor hereby grants You a  
+   worldwide, royalty-free, non‑exclusive, perpetual, irrevocable (except as stated in this section)  
+   patent license to make, have made, use, offer to sell, sell, import, and otherwise transfer  
+   the Work.
+
+4. Redistribution.  
+   You may reproduce and distribute copies of the Work or Derivative Works thereof in any form,  
+   provided that You meet the following conditions:  
+
+   (a) You must give any other recipients of the Work or Derivative Works a copy of this License; and  
+   (b) You must cause any modified files to carry prominent notices stating that You changed the files; and  
+   (c) You must retain, in the Source form of any Derivative Works that You distribute, all copyright,  
+       patent, trademark, and attribution notices from the Source form of the Work, excluding those notices  
+       that do not pertain to any part of the Derivative Works; and  
+   (d) If the Work includes a “NOTICE” text file as part of its distribution, then any Derivative Works  
+       that You distribute must include a readable copy of the attribution notices contained within such  
+       NOTICE file.
+
+5. Submission of Contributions.  
+   Unless You explicitly state otherwise, any Contribution intentionally submitted for inclusion in the Work  
+   by You to the Licensor shall be under the terms and conditions of this License.
+
+6. Trademarks.  
+   This License does not grant permission to use the trade names, trademarks, service marks, or product names  
+   of the Licensor, except as required for reasonable and customary use in describing the origin of the Work and  
+   reproducing the content of the NOTICE file.
+
+7. Disclaimer of Warranty.  
+   THE WORK IS PROVIDED “AS IS”, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,  
+   either express or implied. THE COPYRIGHT HOLDERS OR CONTRIBUTORS ARE NOT LIABLE  
+   FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,  
+   ARISING FROM, OUT OF OR IN CONNECTION WITH THE WORK OR THE USE OR OTHER DEALINGS IN THE WORK.
+
+8. Limitation of Liability.  
+   In no event and under no legal theory, whether in tort (including negligence), contract, or otherwise,  
+   unless required by applicable law (such as deliberate and grossly negligent acts) or agreed to in writing,  
+   shall any Contributor be liable to You for damages, including any direct, indirect, special, incidental,  
+   or consequential damages of any character arising as a result of this License or out of the use or inability  
+   to use the Work (including but not limited to loss of data, data being rendered inaccurate, losses sustained  
+   by You or third parties, or a failure of the Work to operate with any other software), even if such Contributor  
+   has been advised of the possibility of such damages.
+
+Full text source: Apache Foundation license terms. 1
+
+---
+
+===============================================================================
+5) psutil — BSD 3‑Clause License (“New” / “Revised” BSD License)
+===============================================================================
+
+BSD 3-Clause License
+
+Copyright (c) 2009-2025, Giampaolo Rodola  
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.  
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.  
+3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 2
+
+---
+
+===============================================================================
+6) Python Standard Library
+===============================================================================
+
+Some modules from Python Standard Library are used (sys, os, subprocess, threading, re, shutil, json, datetime, time, zipfile, webbrowser).  
+They are covered under the Python Software Foundation License.  
+You may refer to the official PSF license text provided with your Python distribution for details.  
+(Python Standard Library usage generally imposes no additional obligations beyond what the PSF license grants.)
+
+---
+
+===============================================================================
+End of LICENSE.txt
+===============================================================================

@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Launcher</title>
+    <script type="text/javascript" src="/eel.js"></script>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+<body>
+    <div id="toast-container"></div>
+    <div id="remoteSecurityWarningBanner" class="hidden"
+        style="background: linear-gradient(90deg, #ff5252, #ff1744); color: white; padding: 8px 20px; text-align: center; font-weight: bold; z-index: 15000; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.2); flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 13px;">
+            <i class="bi bi-shield-check" style="font-size: 18px;"></i>
+            <span data-i18n="security_warning_banner">보안 경고: 원격 제어용 비밀번호가 설정되어 있지 않습니다!</span>
+        </div>
+        <button class="btn"
+            style="background: white; color: #ff1744; border: none; padding: 3px 12px; font-size: 11px; font-weight: 800; border-radius: 4px;"
+            onclick="openRemoteSettingsPopup()" data-i18n="btn_go_to_settings">지금 설정하기</button>
+    </div>
+    <!-- [추가] 원격 제어 활성화 알림 배너 -->
+    <div id="remoteEnabledWarningBanner" class="hidden"
+        style="background: linear-gradient(90deg, #ff9100, #f57c00); color: white; padding: 8px 20px; text-align: center; font-weight: bold; z-index: 14999; display: flex; justify-content: center; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.2); flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 13px;">
+            <i class="bi bi-exclamation-circle" style="font-size: 18px;"></i>
+            <span data-i18n="remote_enabled_banner">⚠️ 원격제어(BETA)가 활성화되어 있습니다. 외부에서의 비인가 접근 등 혹시 모를 위험에 항상 주의하세요.</span>
+        </div>
+    </div>
+
+    <!-- [추가] 외부 노출 주의 배너 (노란색) -->
+    <div id="remoteIpExposureBanner" class="hidden"
+        style="background: #ffd740; color: #000; padding: 6px 20px; text-align: center; font-weight: bold; z-index: 14000; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; font-size: 11px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-exclamation-circle" style="font-size: 16px;"></i>
+            <span data-i18n="remote_ip_warning">⚠️ 주의: 외부 접속 주소와 비밀번호가 유출되면 정보가 유출될 수 있습니다. 신뢰할 수 없는 사람에게는 공유하지
+                마세요!</span>
+        </div>
+        <i class="bi bi-x" style="cursor: pointer; font-size: 18px;"
+            onclick="this.parentElement.classList.add('hidden')"></i>
+    </div>
+
+    <!-- [추가] 모바일 상단 바 -->
+    <div class="mobile-header">
+        <button class="menu-toggle" onclick="toggleSidebar()">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="mobile-logo">AYA SERVER LAUNCHER</div>
+        <div style="width: 40px;"></div>
+    </div>
+
+    <!-- [추가] 사이드바 오버레이 -->
+    <div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- 메인 레이아웃 컨테이너 (사이드바 + 메인 영역) -->
+    <div style="display: flex; flex: 1; overflow: hidden; width: 100%;">
+        <aside class="sidebar">
+            <div class="logo-area" data-i18n="title_launcher">SERVER LAUNCHER</div>
+            <div class="server-list" id="sidebarList"></div>
+            <div class="sidebar-footer">
+                <button class="btn-icon" onclick="openModal('launcherSettingsModal')"><i
+                        class="bi bi-gear"></i></button>
+                <button class="btn-icon btn-tunnel" onclick="openTunnel()" title="터널"><i class="bi bi-globe"></i></button>
+                <button class="btn-icon btn-new" onclick="openModal('serverCreateTypeModal')"><i class="bi bi-plus"></i>
+                    &nbsp;<span data-i18n="btn_new_server">새 서버</span></button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div id="emptyScreen" class="empty-screen"><i class="bi bi-terminal"></i>
+                <h3 data-i18n="msg_select_server">서버를 선택하세요</h3>
+            </div>
+            <div id="mainContent" class="main-content-wrapper">
+                <div class="header">
+                    <div class="header-left">
+                        <h2 id="headerTitle">Server Name</h2>
+                    </div>
+                    <div class="status-badge" id="statusBadge">
+                        <div class="dot"></div> <span id="statusText">READY</span>
+                    </div>
+                </div>
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('dashboard', this)" data-i18n="tab_dashboard">대시보드</div>
+                    <div class="tab" onclick="switchTab('environment', this)" data-i18n="tab_env">서버 환경</div>
+                    <div class="tab" onclick="switchTab('players', this)" data-i18n="tab_players">플레이어 관리</div>
+                    <div class="tab" onclick="switchTab('settings', this)" data-i18n="tab_settings">전체 설정</div>
+                    <div class="tab plugins" onclick="switchTab('plugins', this)" data-i18n="tab_plugins">🧩 플러그인</div>
+                    <div class="tab info" onclick="switchTab('info', this)" data-i18n="tab_info">ℹ️ 서버 정보</div>
+                    <div class="tab danger" onclick="switchTab('danger', this)" data-i18n="tab_danger">⛔ 위험 구간</div>
+                </div>
+
+                <div id="dashboard" class="content active">
+                    <div class="card-grid">
+                        <div class="card">
+                            <div class="card-label">CPU Usage</div>
+                            <div class="card-value" id="sysCpu">0%</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-label">Allocated RAM</div>
+                            <div class="card-value" id="ramCardDisplay">2 GB</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-label" data-i18n="card_player">Active Players</div>
+                            <div class="card-value"><span id="playerCount">0</span></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-label" data-i18n="card_status">Server Status</div>
+                            <div class="card-value" id="statusSimple" style="font-size:20px; color: var(--accent-red)">
+                                Stopped</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-label">Public IP</div>
+                            <div class="card-value" id="publicIp" style="font-size:15px; word-break:break-all;">
+                                Checking...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="console-box">
+                        <div class="logs" id="logs"></div>
+                        <div
+                            style="display:flex; border-top:1px solid rgba(255,255,255,0.08); padding: 12px 24px; align-items:center;">
+                            <span
+                                style="color: var(--accent-green); font-weight:bold; margin-right:12px; font-size: 16px;">$</span>
+                            <input type="text" class="cmd-input" id="cmdInput" placeholder="명령어 입력..."
+                                data-i18n="ph_cmd_input">
+                        </div>
+                    </div>
+
+                    <div class="action-bar">
+                        <button class="btn btn-yellow hidden" id="btnRestart" onclick="askRestart()"
+                            data-i18n="btn_restart">재시작</button>
+                        <button class="btn btn-red hidden" id="btnStop" onclick="askStop()" data-i18n="btn_stop">서버
+                            종료</button>
+                        <button class="btn btn-blue" id="btnStart" onclick="startServer()" data-i18n="btn_start">서버
+                            시작</button>
+                    </div>
+                </div>
+
+                <div id="environment" class="content">
+                    <div class="env-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                        <div class="env-btn" onclick="openModal('timeControlModal')"
+                            style="padding: 40px 20px; border-color: var(--accent-blue);">
+                            <i class="bi bi-clock" style="font-size: 48px; color: var(--accent-blue);"></i>
+                            <div style="font-size: 18px; font-weight: 800; margin-top: 10px;" data-i18n="title_time">시간
+                                제어</div>
+                            <p style="font-size: 11px; color: var(--text-sub); margin: 5px 0 0 0;">Morning, Noon,
+                                Night...</p>
+                        </div>
+                        <div class="env-btn" onclick="openModal('weatherControlModal')"
+                            style="padding: 40px 20px; border-color: var(--melon);">
+                            <i class="bi bi-cloud-sun" style="font-size: 48px; color: var(--melon);"></i>
+                            <div style="font-size: 18px; font-weight: 800; margin-top: 10px;" data-i18n="title_weather">
+                                날씨 제어</div>
+                            <p style="font-size: 11px; color: var(--text-sub); margin: 5px 0 0 0;">Clear, Rain,
+                                Thunder...</p>
+                        </div>
+                        <div class="env-btn" onclick="openModal('difficultyControlModal')"
+                            style="padding: 40px 20px; border-color: #ff9800;">
+                            <i class="bi bi-lightning-charge" style="font-size: 48px; color: #ff9800;"></i>
+                            <div style="font-size: 18px; font-weight: 800; margin-top: 10px;"
+                                data-i18n="title_difficulty">난이도 제어</div>
+                            <p style="font-size: 11px; color: var(--text-sub); margin: 5px 0 0 0;">Easy, Normal, Hard...
+                            </p>
+                        </div>
+                        <div class="env-btn" onclick="openModal('broadcastModal')"
+                            style="padding: 40px 20px; border-color: var(--accent-purple);">
+                            <i class="bi bi-megaphone" style="font-size: 48px; color: var(--accent-purple);"></i>
+                            <div style="font-size: 18px; font-weight: 800; margin-top: 10px;" data-i18n="tab_broadcast">📢 광고/공지</div>
+                            <p style="font-size: 11px; color: var(--text-sub); margin: 5px 0 0 0;">Title, Subtitle, Actionbar...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="players" class="content">
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap: wrap; gap: 15px;">
+                        <h3 style="margin: 0;" data-i18n="title_player_list">접속자 목록</h3>
+                        <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                            <button class="btn btn-blue" style="padding:10px 18px; font-size:12px; box-shadow:none;"
+                                onclick="openListManager('whitelist')" data-i18n="btn_whitelist">화이트리스트 관리</button>
+                            <button class="btn btn-red" style="padding:10px 18px; font-size:12px; box-shadow:none;"
+                                onclick="openListManager('banlist')" data-i18n="btn_banlist">차단 목록 관리</button>
+                            <button class="btn btn-red"
+                                style="padding:10px 18px; font-size:12px; background:#8b0000; box-shadow:none;"
+                                onclick="openListManager('ip-banlist')" data-i18n="btn_ip_banlist">IP 차단 관리</button>
+                        </div>
+                    </div>
+                    <div id="playerList" class="player-list">
+                        <div class="empty-msg" style="text-align:center;color:#666;" data-i18n="msg_no_players">접속 중인
+                            플레이어가
+                            없습니다.</div>
+                    </div>
+                </div>
+
+                <div id="settings" class="content">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+                        <div class="env-btn" onclick="loadSettings(); openModal('backupSettingsModal')"
+                            style="padding:30px 20px; border-color:var(--melon);">
+                            <i class="bi bi-hdd" style="font-size:36px; color:var(--melon);"></i>
+                            <div style="font-size:16px; font-weight:800; margin-top:8px;" data-i18n="title_backup">💾 백업 설정</div>
+                            <p style="font-size:11px; color:var(--text-sub); margin:4px 0 0 0;">Auto Backup, Restore...</p>
+                        </div>
+                        <div class="env-btn" onclick="loadSettings(); openModal('javaSettingsModal')"
+                            style="padding:30px 20px; border-color:var(--accent-blue);">
+                            <i class="bi bi-cup-hot" style="font-size:36px; color:var(--accent-blue);"></i>
+                            <div style="font-size:16px; font-weight:800; margin-top:8px;" data-i18n="title_java">☕ Java 설정</div>
+                            <p style="font-size:11px; color:var(--text-sub); margin:4px 0 0 0;">Executable Path, RAM, Version...</p>
+                        </div>
+                        <div class="env-btn" onclick="loadSettings(); openModal('serverPropertiesModal')"
+                            style="padding:30px 20px; border-color:var(--accent-orange);">
+                            <i class="bi bi-file-text" style="font-size:36px; color:var(--accent-orange);"></i>
+                            <div style="font-size:16px; font-weight:800; margin-top:8px;">📝 server.properties</div>
+                            <p style="font-size:11px; color:var(--text-sub); margin:4px 0 0 0;">General, Performance, World, Gameplay, Security...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="plugins" class="content">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h3 style="color:var(--accent-orange); margin: 0;" data-i18n="title_plugin_manage">🧩 플러그인 관리</h3>
+                        <button class="btn"
+                            style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding: 10px 18px;"
+                            onclick="refreshPluginList()" data-i18n="btn_refresh">🔄 새로고침</button>
+                    </div>
+                    <p style="color:var(--text-sub); font-size:13px; margin-top:-5px; margin-bottom:20px;">
+                        <span data-i18n="desc_plugin_list">서버 폴더의 plugins 폴더 내에 위치한 플러그인 목록입니다.</span><br>
+                        <span data-i18n="desc_plugin_toggle">스위치를 비활성화하면 확장명이 <b>.disabled</b>로 임시 수정되어 로드가 제한됩니다.</span>
+                    </p>
+                    <div id="pluginList" class="list-box"
+                        style="height: 100%; background: transparent; border: none; overflow-y: auto; padding: 0;">
+                    </div>
+                </div>
+
+                <div id="info" class="content">
+                    <h2 style="color:var(--accent-cyan); margin: 0 0 15px 0; font-size: 20px;"
+                        data-i18n="title_server_info">ℹ️ 서버 정보</h2>
+                    <div class="setting-card" style="border-color:var(--accent-cyan);">
+                        <div class="setting-row">
+                            <span data-i18n="info_created">생성 일자</span>
+                            <span id="infoCreated" style="color:#fff; font-weight:bold;">-</span>
+                        </div>
+                        <div class="setting-row">
+                            <span data-i18n="info_source">다운로드 출처</span>
+                            <span id="infoSource" style="color:var(--text-sub); font-size:13px;">-</span>
+                        </div>
+                        <div class="setting-row">
+                            <span data-i18n="info_size">디스크 사용량</span>
+                            <span id="infoSize" style="color:var(--melon); font-weight:bold;">-</span>
+                        </div>
+                        <div class="setting-row">
+                            <span data-i18n="info_java">Java 버전/경로</span>
+                            <span id="infoJava"
+                                style="color:#ddd; font-size:13px; word-break:break-all; text-align:right; width:60%;">-</span>
+                        </div>
+                        <div class="setting-row">
+                            <span data-i18n="info_players">방문한 플레이어 수</span>
+                            <span id="infoPlayers" style="color:var(--accent-blue); font-weight:bold;">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="danger" class="content">
+                    <div class="setting-card" style="border-color:var(--accent-red); background:rgba(255,82,82,0.03);">
+                        <h3 style="color:var(--accent-red)" data-i18n="tab_danger">⛔ 위험 구간</h3>
+                        <p style="color:var(--text-sub); font-size:13px; line-height:1.6;">서버 파일 위치 확인, 코어 업데이트, 서버 삭제 등 위험한 작업을 수행합니다.</p>
+                        <div style="text-align:right; margin-top:20px;"><button class="btn btn-red"
+                                onclick="openModal('dangerHubModal')">⚙️ 위험 구간 설정 열기</button></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 모달 정의들 -->
+        <div id="serverCreateTypeModal" class="modal-overlay">
+            <div class="modal" style="width: 420px;">
+                <h3 style="margin-bottom:20px;" data-i18n="title_create_server">🆕 새 서버 생성</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:10px;">
+                    <button class="btn"
+                        style="height: 120px; flex-direction: column; gap:10px; background: rgba(0, 188, 212, 0.05); border: 1px solid rgba(0, 188, 212, 0.2);"
+                        onclick="closeModal('serverCreateTypeModal'); openModal('eulaModal')">
+                        <i class="bi bi-plus-circle" style="font-size:32px; color:var(--accent-cyan);"></i>
+                        <span style="font-weight:bold; color:var(--accent-cyan);" data-i18n="btn_new_server_create">New Server</span>
+                    </button>
+                    <button id="btnImportServer" class="btn"
+                        style="height: 120px; flex-direction: column; gap:10px; background: rgba(255, 152, 0, 0.05); border: 1px solid rgba(255, 152, 0, 0.2);"
+                        onclick="processServerImport()">
+                        <i class="bi bi-upload" style="font-size:32px; color:#ff9800;"></i>
+                        <span style="font-weight:bold; color:#ff9800;" data-i18n="btn_import_server">Import Server</span>
+                    </button>
+                </div>
+                <p style="color:var(--text-sub); font-size:12px; text-align:center;" data-i18n="desc_import_server">'불러오기'는 기존에 사용하던 마인크래프트 서버 <br>폴더를
+                    통째로 복사해 옵니다.</p>
+                <div id="importProgressArea" class="hidden"
+                    style="margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.03); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span id="importStatusText"
+                            style="font-size: 12px; color: var(--accent-blue); font-weight: bold;" data-i18n="status_import_preparing">복사 준비 중...</span>
+                    </div>
+                    <div
+                        style="width: 100%; height: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; overflow: hidden;">
+                        <div id="importProgressBar"
+                            style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)); transition: width 0.3s ease;">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-btn-group" style="margin-top:20px;">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); width:100%;"
+                        onclick="closeModal('serverCreateTypeModal')" data-i18n="btn_cancel">취소</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="eulaModal" class="modal-overlay">
+            <div class="modal">
+                <h3 data-i18n="modal_eula_title">⚖️ EULA 동의</h3>
+                <p style="color:#ddd; margin-bottom:20px; line-height:1.5;" data-i18n="msg_eula_content">...</p>
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('eulaModal')" data-i18n="btn_disagree">거절</button><button
+                        class="btn btn-blue" onclick="closeModal('eulaModal'); prepareNewServerModal()"
+                        data-i18n="btn_agree">동의합니다</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="creditsModal" class="modal-overlay">
+            <div class="modal" style="width: 540px;">
+                <h3>📜 Credits</h3>
+                <div
+                    style="max-height: 420px; overflow-y: auto; font-size: 13px; line-height: 1.6; color: var(--text-main); padding-right: 10px;">
+                    <h4 style="color:var(--melon); margin-bottom:5px;">Project</h4>
+                    <p><strong>Server Launcher</strong><br>A lightweight and simple server generator for Minecraft.</p>
+                    <h4 style="color:var(--accent-blue); margin-top:15px; margin-bottom:5px;">Developers</h4>
+                    <ul style="padding-left: 20px; margin: 0;">
+                        <li><strong>JIN</strong></li>
+                    </ul>
+                    <h4 style="color:var(--accent-green); margin-top:15px; margin-bottom:5px;">Tech Stack</h4>
+                    <ul style="padding-left: 20px; margin: 0;">
+                        <li><strong>Python</strong> - Backend Runtime</li>
+                        <li><strong>Eel</strong> - GUI Library (gevent + websockets)</li>
+                        <li><strong>pywebview</strong> - Native Webview Window</li>
+                        <li><strong>PyInstaller</strong> - Executable Packaging</li>
+                        <li><strong>HTML/CSS/JS</strong> - Frontend Interface</li>
+                    </ul>
+
+                    <h4 style="color:var(--accent-gold); margin-top:15px; margin-bottom:5px;">License (오픈소스)</h4>
+                    <p>본 소프트웨어는 <strong>무료 오픈소스</strong>로 제공됩니다. 개인/상업적 용도로 자유롭게 사용, 개조, 연구할 수 있으며, 개조·재배포 시 <strong>원본 이름(AYA Server Launcher)과 출처를 명확히 표기</strong>해야 합니다. 출처 미표기 배포 및 본 소프트웨어의 무료 버전을 유료로 재판매하는 행위는 금지됩니다.</p>
+                    <p style="font-size: 12px; color: var(--text-sub);">※ 자세한 내용은 첫 실행 시 안내된 EULA(최종 사용자 라이선스 계약)를 참조하세요.</p>
+
+                    <h4 style="color:var(--accent-purple); margin-top:15px; margin-bottom:5px;">Third-Party Libraries & Licenses</h4>
+                    <ul style="padding-left: 20px; margin: 0;">
+                        <li><strong>Eel</strong> - MIT License</li>
+                        <li><strong>gevent</strong> - MIT License</li>
+                        <li><strong>requests / urllib3</strong> - Apache-2.0 / MIT License</li>
+                        <li><strong>certifi</strong> - Mozilla Public License 2.0</li>
+                        <li><strong>cryptography</strong> - Apache-2.0 / BSD (dual license)</li>
+                        <li><strong>psutil</strong> - BSD-3-Clause</li>
+                        <li><strong>pywebview</strong> - BSD-3-Clause</li>
+                        <li><strong>pystray / Pillow (PIL)</strong> - MIT License</li>
+                        <li><strong>PyInstaller</strong> - GPL-2.0 (with bootloader exception)</li>
+                        <li><strong>Pretendard Font</strong> - SIL OFL 1.1 (by Orion Cactus)</li>
+                        <li><strong>Bootstrap Icons</strong> - MIT License</li>
+                        <li><strong>Material Symbols (dns)</strong> - Apache-2.0</li>
+                    </ul>
+
+                    <h4 style="color:var(--accent-cyan); margin-top:15px; margin-bottom:5px;">External Services & APIs</h4>
+                    <ul style="padding-left: 20px; margin: 0;">
+                        <li><strong>PaperMC API (Fill v3)</strong> - Server Core Distribution</li>
+                        <li><strong>PurpurMC API</strong> - Server Core Distribution</li>
+                        <li><strong>Minotar API</strong> - Player Skin Rendering</li>
+                        <li><strong>ipify</strong> - Public IP Lookup</li>
+                    </ul>
+                    <p style="font-size: 11px; color: var(--text-sub); margin-top: 10px;">* 모든 서드파티 라이브러리와 리소스는 각각의 소유자 및 해당 라이선스 조건에 따릅니다. Minecraft 및 관련 명칭은 Mojang AB의 상표입니다.</p>
+                    <p style="margin-top: 20px; font-size: 11px; color: var(--text-sub); text-align: center;">
+                        © 2026 AYA Server Launcher. Released under open-source license.
+                    </p>
+                </div>
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('creditsModal')">Close</button></div>
+            </div>
+        </div>
+
+        <div id="updateCoreConfirmModal" class="modal-overlay">
+            <div class="modal" style="border-color:#ff9800;">
+                <h3 style="color:#ff9800;" data-i18n="title_update_core">⬆️ 서버 코어 버전 변경</h3>
+                <p style="color:#fff; font-size:15px; margin-bottom:20px; text-align:center;"
+                    id="updateCoreConfirmMsg">선택한 버전으로 업데이트하시겠습니까?</p>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('updateCoreConfirmModal')" data-i18n="btn_cancel">취소</button>
+                    <button class="btn" style="background:rgba(255,152,0,0.2); border:1px solid #ff9800; color:#ff9800;"
+                        onclick="executeUpdateServerCore()" data-i18n="btn_confirm_update">확인 및 업데이트</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 위험 구간 모달들 -->
+        <div id="dangerHubModal" class="modal-overlay">
+            <div class="modal" style="width:500px;">
+                <h3 style="color:var(--accent-red);" data-i18n="tab_danger">⛔ 위험 구간</h3>
+                <div class="env-grid" style="grid-template-columns:1fr; margin-top:20px;">
+                    <div class="env-btn" style="border-color:rgba(255,255,255,0.15);"
+                        onclick="closeModal('dangerHubModal'); openModal('dangerFolderModal')">
+                        <i class="bi bi-folder2-open"></i><span>파일 위치 확인</span>
+                    </div>
+                    <div class="env-btn" style="border-color:rgba(255,152,0,0.4);"
+                        onclick="closeModal('dangerHubModal'); loadDangerVersions(); openModal('dangerCoreModal')">
+                        <i class="bi bi-arrow-up"></i><span>서버 코어 버전 변경</span>
+                    </div>
+                    <div class="env-btn" style="border-color:var(--accent-red);"
+                        onclick="closeModal('dangerHubModal'); askDeleteServer()">
+                        <i class="bi bi-trash"></i><span>서버 영구 삭제</span>
+                    </div>
+                </div>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('dangerHubModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+        <div id="dangerFolderModal" class="modal-overlay">
+            <div class="modal" style="width:480px;">
+                <h3>📂 파일 위치 확인</h3>
+                <p style="color:var(--text-sub); font-size:13px;">서버 런타임 파일 및 백업들이 위치한 시스템 폴더를 엽니다.</p>
+                <div style="display:flex; gap:10px; margin-top:15px;">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); flex:1;"
+                        onclick="openFolder('root')" data-i18n="btn_open_server_folder">📂 서버 폴더 열기</button>
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); flex:1;"
+                        onclick="openFolder('backup')" data-i18n="btn_open_backup_folder">💾 백업 폴더 열기</button>
+                </div>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('dangerFolderModal'); openModal('dangerHubModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+        <div id="dangerCoreModal" class="modal-overlay">
+            <div class="modal" style="width:540px;">
+                <h3 style="color:#ff9800;" data-i18n="title_update_core">⬆️ 서버 코어 버전 변경</h3>
+                <p style="color:var(--text-sub); font-size:13px; line-height:1.6; margin-bottom:15px;"
+                    data-i18n="desc_update_core">
+                    서버가 중지된 상태에서만 사용하세요. 선택된 버전의 최신 빌드를 다운로드하여 기존 <b>server.jar</b>를 덮어씁니다.
+                </p>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <select id="updateCoreVersion" class="modal-input"
+                        style="flex:1; min-width:150px; border-color:rgba(255,152,0,0.3);">
+                        <option value="">Loading versions...</option>
+                    </select>
+                    <button class="btn"
+                        style="background:rgba(255,152,0,0.1); border:1px solid rgba(255,152,0,0.4); color:#ff9800; padding:10px 20px; white-space:nowrap;"
+                        onclick="askUpdateServerCore()" data-i18n="btn_update_core">
+                        ⬆️ 버전 변경
+                    </button>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:10px;">
+                    <button class="btn"
+                        style="background:rgba(255,152,0,0.05); border:1px solid rgba(255,152,0,0.2); color:white; padding:10px 18px; width:100%;"
+                        onclick="selectLocalCoreFile()" data-i18n="btn_local_core">
+                        🛠️ 로컬 코어 파일(.jar) 직접 선택 및 등록
+                    </button>
+                </div>
+                <p id="updateCoreStatus" style="font-size:12px; color:var(--text-sub); margin-top:10px; display:none;"></p>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('dangerCoreModal'); openModal('dangerHubModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 환경 제어 팝업들 -->
+        <div id="timeControlModal" class="modal-overlay">
+            <div class="modal" style="width: 480px;">
+                <h3 data-i18n="title_time">⏰ 시간 제어</h3>
+                <div class="env-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
+                    <div class="env-btn"
+                        onclick="sendCommand('time set 0'); showToast('Time: Morning'); closeModal('timeControlModal')">
+                        <i class="bi bi-sunrise"></i><span data-i18n="env_morning">아침</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('time set 6000'); showToast('Time: Noon'); closeModal('timeControlModal')">
+                        <i class="bi bi-sun"></i><span data-i18n="env_noon">점심</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('time set 13000'); showToast('Time: Evening'); closeModal('timeControlModal')">
+                        <i class="bi bi-moon-stars"></i><span data-i18n="env_evening">저녁</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('time set 18000'); showToast('Time: Night'); closeModal('timeControlModal')">
+                        <i class="bi bi-moon"></i><span data-i18n="env_night">밤</span>
+                    </div>
+                </div>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); width: 100%;"
+                        onclick="closeModal('timeControlModal')">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="weatherControlModal" class="modal-overlay">
+            <div class="modal" style="width: 480px;">
+                <h3 data-i18n="title_weather">🌥️ 날씨 제어</h3>
+                <div class="env-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
+                    <div class="env-btn"
+                        onclick="sendCommand('weather clear'); showToast('Weather: Clear'); closeModal('weatherControlModal')">
+                        <i class="bi bi-sun"></i><span data-i18n="env_clear">맑음</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('weather rain'); showToast('Weather: Rain'); closeModal('weatherControlModal')">
+                        <i class="bi bi-cloud-rain"></i><span data-i18n="env_rain">비</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('weather thunder'); showToast('Weather: Thunder'); closeModal('weatherControlModal')">
+                        <i class="bi bi-cloud-lightning"></i><span data-i18n="env_thunder">폭풍우</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('gamerule doWeatherCycle false'); showToast('Weather Cycle: OFF'); closeModal('weatherControlModal')">
+                        <i class="bi bi-lock"></i><span data-i18n="env_lock">날씨 고정</span>
+                    </div>
+                    <div class="env-btn" style="grid-column: 1 / -1; border-color: var(--accent-blue);"
+                        onclick="sendCommand('weather clear'); sendCommand('gamerule doWeatherCycle true'); showToast('Weather Reset Perfect!'); closeModal('weatherControlModal')">
+                        <i class="bi bi-arrow-counterclockwise" style="color: var(--accent-blue);"></i><span
+                            style="color: var(--accent-blue);">날씨 초기화 (Reset)</span>
+                    </div>
+                </div>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); width: 100%;"
+                        onclick="closeModal('weatherControlModal')">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="difficultyControlModal" class="modal-overlay">
+            <div class="modal" style="width: 480px;">
+                <h3 data-i18n="title_difficulty">⚔️ 난이도 제어</h3>
+                <div class="env-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
+                    <div class="env-btn"
+                        onclick="sendCommand('difficulty peaceful'); showToast('Difficulty: Peaceful'); closeModal('difficultyControlModal')">
+                        <i class="bi bi-emoji-smile"></i><span data-i18n="diff_peaceful">평화로움</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('difficulty easy'); showToast('Difficulty: Easy'); closeModal('difficultyControlModal')">
+                        <i class="bi bi-feather"></i><span data-i18n="diff_easy">쉬움</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('difficulty normal'); showToast('Difficulty: Normal'); closeModal('difficultyControlModal')">
+                        <i class="bi bi-shield"></i><span data-i18n="diff_normal">보통</span>
+                    </div>
+                    <div class="env-btn"
+                        onclick="sendCommand('difficulty hard'); showToast('Difficulty: Hard'); closeModal('difficultyControlModal')">
+                        <i class="bi bi-x-octagon"></i><span data-i18n="diff_hard">어려움</span>
+                    </div>
+                </div>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); width: 100%;"
+                        onclick="closeModal('difficultyControlModal')">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- [추가] 광고/공지 모달 -->
+        <div id="broadcastModal" class="modal-overlay">
+            <div class="modal" style="width: 660px;">
+                <h3 style="color:var(--accent-purple); font-size:18px; margin-bottom:14px;" data-i18n="title_broadcast">📢 광고 / 공지</h3>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:18px;" data-i18n="desc_broadcast">서버에 접속한 모든 플레이어에게 메시지를 실시간 방송합니다.</p>
+                <div style="display:flex; gap:12px;">
+                    <div class="setting-card" style="flex:1; border-color:var(--accent-purple); padding:16px; margin:0;">
+                        <h3 style="color:var(--accent-purple); font-size:13px; margin:0 0 6px 0;" data-i18n="lbl_bc_title">🖥️ Title</h3>
+                        <div style="color:var(--text-sub); font-size:11px; margin-bottom:8px;" data-i18n="desc_bc_title">화면 중앙 제목</div>
+                        <input type="text" id="bcTitleInput" class="input-text" style="width:100%; font-size:12px; padding:8px 10px; box-sizing:border-box;" placeholder="예: 환영합니다!">
+                        <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;">
+                            <button class="btn" style="font-size:11px; padding:6px 10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);" onclick="sendBroadcast('title_clear')" data-i18n="btn_bc_clear">지우기</button>
+                            <button class="btn btn-purple" style="font-size:11px; padding:6px 10px;" onclick="sendBroadcast('title')" data-i18n="btn_bc_send">보내기</button>
+                        </div>
+                    </div>
+                    <div class="setting-card" style="flex:1; padding:16px; margin:0;">
+                        <h3 style="font-size:13px; margin:0 0 6px 0;" data-i18n="lbl_bc_subtitle">📝 Subtitle</h3>
+                        <div style="color:var(--text-sub); font-size:11px; margin-bottom:8px;" data-i18n="desc_bc_subtitle">타이틀 아래 보조문구</div>
+                        <input type="text" id="bcSubtitleInput" class="input-text" style="width:100%; font-size:12px; padding:8px 10px; box-sizing:border-box;" placeholder="예: 잠시 후 시작">
+                        <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+                            <button class="btn btn-blue" style="font-size:11px; padding:6px 10px;" onclick="sendBroadcast('subtitle')" data-i18n="btn_bc_set">설정</button>
+                        </div>
+                    </div>
+                    <div class="setting-card" style="flex:1; padding:16px; margin:0;">
+                        <h3 style="color:var(--melon); font-size:13px; margin:0 0 6px 0;" data-i18n="lbl_bc_actionbar">💬 Actionbar</h3>
+                        <div style="color:var(--text-sub); font-size:11px; margin-bottom:8px;" data-i18n="desc_bc_actionbar">핫바 위 설명</div>
+                        <input type="text" id="bcActionbarInput" class="input-text" style="width:100%; font-size:12px; padding:8px 10px; box-sizing:border-box;" placeholder="예: 현재 인원 5/10">
+                        <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+                            <button class="btn" style="background:var(--melon); color:#000; font-size:11px; padding:6px 10px;" onclick="sendBroadcast('actionbar')" data-i18n="btn_bc_send">보내기</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-btn-group" style="margin-top:14px;">
+                    <button class="btn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); width:100%;" onclick="closeModal('broadcastModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="playerDetailModal" class="modal-overlay">
+            <div class="modal player-detail-modal">
+                <div class="skin-view">
+                    <i class="bi bi-person" style="font-size:64px;"></i>
+                </div>
+                <div class="p-detail-content">
+                    <h2 id="pDetailName" style="margin:0; font-weight:800;">PlayerName</h2>
+                    <p id="pDetailUUID" style="font-size:11px; color:#666; margin:0;">UUID: Unknown</p>
+                    <div style="margin-top:10px;">
+                        <div class="p-stat-row"><span class="p-stat-label" data-i18n="modal_p_join">접속 시간</span><span
+                                class="p-stat-val" id="pDetailJoin">00:00:00</span></div>
+                        <div class="p-stat-row"><span class="p-stat-label" data-i18n="modal_p_status">상태</span><span
+                                class="p-stat-val" id="pDetailStatus" style="color:var(--accent-green);">Online</span>
+                        </div>
+                    </div>
+                    <div class="action-grid">
+                        <div class="act-btn" onclick="openWhisperModal()"
+                            style="border-color: var(--accent-blue); color: var(--accent-blue);"
+                            data-i18n="btn_whisper"><i class="bi bi-chat-dots" style="margin-right:6px;"></i>
+                            귓속말 (Whisper)</div>
+                        <div class="act-btn" onclick="openTpModal()"
+                            style="border-color: var(--melon); color: var(--melon);" data-i18n="btn_tp"><i class="bi bi-rocket" style="margin-right:6px;"></i> 이동 (TP)</div>
+                        <div class="act-btn" onclick="openGamemodeModal()"
+                            style="border-color: var(--accent-gold); color: var(--accent-gold);" data-i18n="btn_gamemode"><i class="bi bi-controller" style="margin-right:6px;"></i> Gamemode
+                        </div>
+                        <div class="act-btn" onclick="openNeneDataModal()"
+                            style="border-color: var(--accent-orange); color: var(--accent-orange);"><i class="bi bi-puzzle" style="margin-right:6px;"></i> Details</div>
+
+                        <div class="act-btn" onclick="askAction('op', 'OP')" data-i18n="act_op">관리자 (OP)</div>
+                        <div class="act-btn" onclick="askAction('deop', 'DEOP')" data-i18n="act_deop">권한 해제 (DEOP)</div>
+                        <div class="act-btn danger" onclick="askAction('kick', 'KICK')" data-i18n="act_kick">추방 (KICK)
+                        </div>
+                        <div class="act-btn danger" onclick="openBanOptionModal()" data-i18n="act_ban">차단 (BAN)</div>
+                    </div><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); width:100%; margin-top:10px;"
+                        onclick="closeModal('playerDetailModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="neneDataModal" class="modal-overlay">
+            <div class="modal player-detail-modal nene-modal-style">
+                <div class="skin-view">
+                    <i class="bi bi-person" style="font-size:64px;"></i>
+                </div>
+                <div class="p-detail-content">
+                    <h2 id="neneDetailName" style="margin:0; font-weight:800;">PlayerName</h2>
+                    <p style="font-size:13px; color:var(--text-sub); margin:0;">User Data</p>
+                    <div id="neneDataContent"
+                        style="flex:1; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:10px; padding:15px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
+                        Loading...
+                    </div>
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); width:100%; margin-top:10px;"
+                        onclick="closeNeneDataModal()" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="whisperModal" class="modal-overlay">
+            <div class="modal">
+                <h3 data-i18n="modal_whisper_title">💬 귓속말 보내기</h3>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:12px;">To: <b id="whisperTarget"
+                        style="color:#fff"></b></p>
+                <input type="text" id="whisperInput" class="modal-input" placeholder="메시지 내용을 입력하세요...">
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('whisperModal')" data-i18n="btn_cancel">취소</button><button
+                        class="btn btn-blue" onclick="sendWhisperReal()" data-i18n="btn_bc_send">보내기</button></div>
+            </div>
+        </div>
+
+        <div id="tpModal" class="modal-overlay">
+            <div class="modal" style="width:420px;">
+                <h3 style="color:var(--melon);" data-i18n="modal_tp_title">🚀 텔레포트 (TP)</h3>
+                <p style="color:var(--text-sub); font-size:13px;" data-i18n="msg_tp_ask">누구에게 이동하시겠습니까?</p>
+                <div id="tpList" class="list-box" style="height: 250px;"></div>
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('tpModal')" data-i18n="btn_close">닫기</button></div>
+            </div>
+        </div>
+
+        <div id="gamemodeModal" class="modal-overlay">
+            <div class="modal">
+                <h3 style="color:var(--accent-gold);" data-i18n="title_gamemode">🎮 Gamemode</h3>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:20px;"><span data-i18n="label_target">대상</span>: <b id="gmTarget"
+                        style="color:#fff"></b></p>
+                <div class="env-grid">
+                    <div class="env-btn" onclick="executeGamemode('survival')"><i
+                            class="bi bi-heart"></i><span data-i18n="gm_survival">Survival</span>
+                    </div>
+                    <div class="env-btn" onclick="executeGamemode('creative')"><i
+                            class="bi bi-box"></i><span data-i18n="gm_creative">Creative</span>
+                    </div>
+                    <div class="env-btn" onclick="executeGamemode('adventure')"><i
+                            class="bi bi-map"></i><span data-i18n="gm_adventure">Adventure</span></div>
+                    <div class="env-btn" onclick="executeGamemode('spectator')"><i
+                            class="bi bi-eye"></i><span data-i18n="gm_spectator">Spectator</span>
+                    </div>
+                </div>
+                <div class="modal-btn-group" style="margin-top:20px;"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('gamemodeModal')" data-i18n="btn_cancel">취소</button></div>
+            </div>
+        </div>
+
+        <div id="banOptionModal" class="modal-overlay">
+            <div class="modal">
+                <h3 style="color:var(--accent-red);" data-i18n="modal_ban_opt_title">🚫 차단 옵션 선택</h3>
+                <p style="color:#ddd; margin-bottom:20px;" data-i18n="msg_ban_opt">어떤 방식으로 차단하시겠습니까?</p>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.02); border:1px solid var(--accent-red); color:var(--accent-red);"
+                        onclick="executeBan('name')" data-i18n="btn_ban_name">닉네임 차단 (Name Ban)</button>
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.02); border:1px solid var(--accent-red); color:var(--accent-red);"
+                        onclick="executeBan('ip')" data-i18n="btn_ban_ip">IP 차단 (IP Ban)</button>
+                    <button class="btn btn-red" onclick="executeBan('both')" data-i18n="btn_ban_both">둘 다 차단
+                        (Both)</button>
+                </div>
+                <div class="modal-btn-group" style="margin-top:20px;"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('banOptionModal')" data-i18n="btn_cancel">취소</button></div>
+            </div>
+        </div>
+
+        <div id="actionConfirmModal" class="modal-overlay">
+            <div class="modal">
+                <h3 data-i18n="modal_confirm_title">⚠️ 실행 확인</h3>
+                <p id="actionConfirmText" style="color:#ddd; margin-bottom:20px;">Execute?</p>
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('actionConfirmModal')" data-i18n="btn_cancel">취소</button><button
+                        class="btn btn-blue" onclick="confirmAction()" data-i18n="btn_confirm">확인</button></div>
+            </div>
+        </div>
+
+        <div id="stopConfirmModal" class="modal-overlay">
+            <div class="modal" style="border-color:var(--accent-red);">
+                <h3 style="color:var(--accent-red);">⚠️ 서버 종료 확인</h3>
+                <p style="color:#ddd; margin-bottom:20px;">정말 서버를 안전하게 종료하시겠습니까?</p>
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('stopConfirmModal')" data-i18n="btn_cancel">취소</button><button
+                        class="btn btn-red" onclick="executeStop()">종료</button></div>
+            </div>
+        </div>
+
+        <div id="restartConfirmModal" class="modal-overlay">
+            <div class="modal" style="border-color:var(--accent-gold);">
+                <h3 style="color:var(--accent-gold);" data-i18n="modal_restart_title">🔄 서버 재시작 확인</h3>
+                <p style="color:#ddd; margin-bottom:20px;" data-i18n="msg_restart_confirm">정말 서버를 다시 시작하시겠습니까?<br>(서버가
+                    프로세스를
+                    종료한 뒤 즉시 부팅 과정을 진행합니다)</p>
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('restartConfirmModal')" data-i18n="btn_cancel">취소</button><button
+                        class="btn btn-yellow" onclick="executeRestart()" data-i18n="btn_restart">재시작</button></div>
+            </div>
+        </div>
+
+        <div id="pluginDetailModal" class="modal-overlay">
+            <div class="modal">
+                <h3 style="color:var(--accent-orange);" data-i18n="title_plugin_manage">🧩 플러그인 관리</h3>
+                <p id="plDetailName" style="color:#fff; font-weight:bold; margin-bottom:20px;">Filename</p>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:20px;" data-i18n="msg_delete_plugin">이 플러그인을 서버 디렉토리에서 완전히
+                    삭제하시겠습니까?<br>(이
+                    작업은 다시 되돌릴 수 없습니다)</p>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('pluginDetailModal')" data-i18n="btn_cancel">취소</button>
+                    <button class="btn btn-red" onclick="confirmDeletePlugin()" data-i18n="btn_delete">🗑️ 삭제
+                        (Delete)</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="listManagerModal" class="modal-overlay">
+            <div class="modal list-manager-modal" style="width: 440px;">
+                <h3 id="listTitle" data-i18n="modal_list_title">목록 관리</h3>
+                <div style="display:flex; gap:10px; margin-bottom:15px;"><input type="text" id="listInput"
+                        class="modal-input" style="margin:0; flex:1;" placeholder="Nickname / IP"
+                        data-i18n="ph_nickname"><button class="btn btn-blue" style="padding:0 20px;"
+                        onclick="addItemToList()" data-i18n="btn_add">추가</button></div>
+                <div id="listContainer" class="list-box"></div>
+                <div style="text-align:right;"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('listManagerModal')" data-i18n="btn_close">닫기</button></div>
+            </div>
+        </div>
+
+        <div id="newServerModal" class="modal-overlay">
+            <div class="modal" style="width: 480px; max-width: 90vw;">
+                <h3 data-i18n="modal_new_title" style="margin-bottom: 25px;">✨ 새 서버 생성</h3>
+
+                <div class="modal-scroll-area" style="max-height: 500px; overflow-y: auto; padding-right: 5px;">
+                    <label class="modal-label" data-i18n="modal_new_name">서버 이름</label>
+                    <input type="text" id="newServerName" class="modal-input" placeholder="MyServer"
+                        oninput="cleanServerNameInput(this)">
+
+                    <label class="modal-label" data-i18n="modal_new_ver">버전</label>
+                    <select id="newServerVersion" class="modal-input">
+                        <option value="">Loading...</option>
+                    </select>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                        <div>
+                            <label class="modal-label" data-i18n="modal_new_difficulty">난이도 설정</label>
+                            <select id="newServerDifficulty" class="modal-input">
+                                <option value="peaceful" data-i18n="diff_peaceful">평화로움</option>
+                                <option value="easy" data-i18n="diff_easy">쉬움</option>
+                                <option value="normal" data-i18n="diff_normal" selected>보통</option>
+                                <option value="hard" data-i18n="diff_hard">어려움</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="modal-label" data-i18n="modal_new_gamemode">기본 게임모드</label>
+                            <select id="newServerGamemode" class="modal-input">
+                                <option value="survival" selected>Survival</option>
+                                <option value="creative">Creative</option>
+                                <option value="adventure">Adventure</option>
+                                <option value="spectator">Spectator</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <label class="modal-label" style="display:flex; justify-content:space-between; margin-top: 15px;">
+                        <span data-i18n="modal_new_ram">메모리 할당 (RAM)</span>
+                        <b id="newRamVal" style="color:var(--melon);">4 GB</b>
+                    </label>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <input type="range" id="newServerRam" min="1" max="32" value="4" step="1"
+                            style="flex:1; accent-color:var(--melon);"
+                            oninput="document.getElementById('newRamVal').innerText = this.value + ' GB'">
+                    </div>
+
+                    <label class="modal-label" style="margin-top: 15px;">Java 런타임 (Java Runtime)</label>
+                    <select id="newServerJava" class="modal-input">
+                        <option value="java">Loading...</option>
+                    </select>
+
+                    <label class="modal-label" style="margin-top: 15px;" data-i18n="modal_new_import_world">싱글플레이 월드
+                        복사</label>
+                    <div style="display:flex; gap:8px;">
+                        <select id="newServerImportWorld" class="modal-input"
+                            style="flex:1; border-color: rgba(0, 188, 212, 0.3); margin-bottom:0;">
+                            <option value="" data-i18n="modal_new_import_hint">(선택 안 함)</option>
+                        </select>
+                        <button class="btn"
+                            style="background:rgba(0,188,212,0.1); border:1px solid rgba(0,188,212,0.2); padding: 0 12px; height: 38px;"
+                            onclick="browseLocalWorldFolder()" title="Open File Explorer">
+                            <i class="bi bi-folder2-open" style="font-size:20px; color:var(--accent-blue);"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="modal-btn-group" style="margin-top: 25px;">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('newServerModal')" data-i18n="btn_cancel">취소</button>
+                    <button class="btn btn-blue" id="btnCreateReal" onclick="createNewServer()"
+                        data-i18n="btn_create">생성</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="launcherSettingsModal" class="modal-overlay">
+            <div class="modal">
+                <h3 data-i18n="modal_setting_title">⚙️ 런처 설정</h3><label class="modal-label"
+                    data-i18n="modal_setting_mirror">미러 URL</label>
+                <div style="display:flex; gap:6px; align-items:stretch;">
+                    <input type="text" id="mirrorUrlInput"
+                        class="modal-input" style="flex:1;" value="https://fill.papermc.io/v3/projects/paper">
+                    <button class="btn" onclick="openMirrorPresetModal()"
+                        style="flex-shrink:0; padding:8px 12px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); font-size:13px;">⚡</button>
+                </div>
+                <label class="modal-label"
+                    data-i18n="modal_setting_lang">언어 (Language)</label><select id="langSelect" class="modal-input"
+                    onchange="changeLanguage(this.value)">
+                </select>
+
+                <label class="modal-label" style="margin-top:15px;"
+                    data-i18n="modal_setting_uimode">UI 모드</label>
+                <select id="uiModeSelect" class="modal-input">
+                    <option value="browser" data-i18n="uimode_browser">브라우저</option>
+                    <option value="webview" data-i18n="uimode_webview">웹뷰 (네이티브)</option>
+                </select>
+                <div style="font-size:11px; color:#666; margin-top:4px;" data-i18n="uimode_hint">변경 시 다음 실행부터 적용됩니다.</div>
+
+                <label class="modal-label" style="margin-top:15px;">테마</label>
+                <select id="themeSelect" class="modal-input" onchange="applyTheme(this.value)">
+                    <option value="default">기본 (현재)</option>
+                    <option value="light">라이트 (Light)</option>
+                    <option value="dark">다크 (Dark)</option>
+                </select>
+
+                <!-- [추가] 런처 설정 언어선택 밑에 칸에 버튼 배치 -->
+                <label class="modal-label" style="margin-top:15px;" data-i18n="label_remote_settings">네트워크 원격 설정 (Beta)</label>
+                <button class="btn"
+                    style="background: rgba(0, 188, 212, 0.05); border: 1px solid rgba(0, 188, 212, 0.2); width: 100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"
+                    onclick="openRemoteSettingsPopup()">
+                    <span style="color: var(--accent-blue)" data-i18n="remote_nav_btn">🌐 원격 연결 제어 관리</span>
+                    <i class="bi bi-globe" style="color: var(--accent-blue)"></i>
+                </button>
+
+                <label class="modal-label" data-i18n="label_troubleshoot">문제 해결 (Troubleshoot)</label>
+                <button class="btn"
+                    style="background: rgba(255, 82, 82, 0.05); border: 1px solid rgba(255, 82, 82, 0.2); width: 100%; display:flex; justify-content:space-between; align-items:center;"
+                    onclick="openModal('javaHelpModal')">
+                    <span style="color: var(--accent-red)" data-i18n="btn_java_kill_tool">🛠️ 자바 강제 종료 도구</span>
+                    <i class="bi bi-x-octagon" style="color: var(--accent-red)"></i>
+                </button>
+
+                <div
+                    style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px; text-align: center;">
+                    <button class="btn"
+                        style="background: rgba(255,255,255,0.03); width: 100%; border: 1px solid rgba(255,255,255,0.08); color: #aaa;"
+                        onclick="closeModal('launcherSettingsModal'); openModal('creditsModal')" data-i18n="btn_credits">📜 Credits</button>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 15px;">
+
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn"
+                            style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                            onclick="closeModal('launcherSettingsModal')" data-i18n="btn_close">닫기</button>
+                        <button class="btn btn-blue" onclick="saveLauncherSettings()" data-i18n="btn_save">저장</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- [추가] 미러 URL 프리셋 선택 모달 -->
+        <div id="mirrorPresetModal" class="modal-overlay">
+            <div class="modal" style="width: 420px;">
+                <h3 data-i18n="mirror_preset_title">⚡ 미러 URL 빠른 설정</h3>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:20px;" data-i18n="mirror_preset_desc">
+                    아래 버튼을 누르면 미러 URL이 즉시 지정됩니다.
+                </p>
+                <button class="btn" onclick="applyMirrorPreset('https://api.purpurmc.org/v2/purpur')"
+                    style="width:100%; background:rgba(156, 39, 176, 0.1); border:1px solid rgba(156, 39, 176, 0.3); display:flex; justify-content:space-between; align-items:center; padding:14px 18px; margin-bottom:10px;">
+                    <span style="font-weight:700;">PurpurMC</span>
+                    <span style="font-size:12px; color:#aaa;">https://api.purpurmc.org/v2/purpur</span>
+                </button>
+                <button class="btn" onclick="applyMirrorPreset('https://fill.papermc.io/v3/projects/paper')"
+                    style="width:100%; background:rgba(33, 150, 243, 0.1); border:1px solid rgba(33, 150, 243, 0.3); display:flex; justify-content:space-between; align-items:center; padding:14px 18px; margin-bottom:15px;">
+                    <span style="font-weight:700;">PaperMC</span>
+                    <span style="font-size:12px; color:#aaa;">https://fill.papermc.io/v3/projects/paper</span>
+                </button>
+                <div style="text-align:right;">
+                    <button class="btn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('mirrorPresetModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- [추가] 원격제어 설정 모달 팝업 -->
+        <div id="remoteControlSettingsModal" class="modal-overlay">
+            <div class="modal" style="width: 680px;">
+                <h3 style="color: var(--accent-blue);" data-i18n="remote_modal_title">🌐 원격 연결 (베타)</h3>
+                <p style="color: var(--text-sub); font-size: 13px; line-height: 1.5; margin-bottom: 20px;"
+                    data-i18n="remote_modal_desc">
+                    타 PC나 모바일 웹브라우저에서 이 런처에 접속하여 원격으로 제어할 수 있도록 도와줍니다.
+                </p>
+
+                <div
+                    style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+                    <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 5px; font-weight: 700;"
+                        data-i18n="remote_addr_label">내 외부 원격 접속
+                        주소</div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div id="remoteAddressLink"
+                            style="flex:1; font-family: 'Fira Code', monospace; color: var(--accent-cyan); font-weight: bold; font-size: 14px; word-break: break-all;">
+                            불러오는 중...
+                        </div>
+                        <button class="btn" onclick="copyRemoteAddress()" data-i18n="btn_copy"
+                            style="flex-shrink:0; padding:6px 12px; background:rgba(0,188,212,0.1); border:1px solid rgba(0,188,212,0.25); font-size:12px; white-space:nowrap;">Copy</button>
+                    </div>
+                </div>
+
+                <div class="setting-row" style="margin-bottom: 20px;">
+                    <span><span data-i18n="remote_enable_label">원격 제어 활성화</span> <small
+                            style="color:var(--accent-orange); font-size:10px; margin-left:4px;"
+                            data-i18n="remote_restart_needed">(재시작 필요)</small></span>
+                    <label class="switch">
+                        <input type="checkbox" id="remote_control_enabled_checkbox">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <label class="modal-label" data-i18n="remote_pw_label">새 원격 비밀번호 설정</label>
+                <input type="password" id="remote_control_password_input" class="modal-input"
+                    data-i18n="remote_pw_placeholder" placeholder="새 비밀번호 입력 (빈 칸 입력 시 변경 없음)"
+                    style="margin-bottom: 10px;">
+                <p style="font-size: 11px; color: var(--accent-red); margin-bottom: 20px;"
+                    data-i18n="remote_pw_warning">* 안전한 환경을 위해 비밀번호 설정을 권장합니다.</p>
+
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('remoteControlSettingsModal')">닫기</button>
+                    <button class="btn btn-blue" onclick="saveRemoteControlConfig()">확인</button>
+                </div>
+
+                <div style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px;">
+                        <span style="color: var(--accent-orange); font-weight: 700; font-size: 13px;">📋 접속 기록</span>
+                        <button class="btn" style="padding: 4px 12px; font-size: 11px;" onclick="refreshAccessLogs()">새로고침</button>
+                    </div>
+                    <div id="accessLogContainer" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; font-size: 11px; font-family: 'Fira Code', monospace;">
+                        <div style="color: #666; text-align: center; padding: 20px;">불러오는 중...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- [추가] 원격 접속 인증 강제 락 잠금 화면 모달 -->
+        <div id="remoteLockScreenModal" class="modal-overlay"
+            style="z-index: 20000; background: rgba(5, 8, 12, 0.98); backdrop-filter: blur(20px);">
+            <div class="modal"
+                style="width: 400px; border-color: var(--accent-blue); box-shadow: 0 0 40px rgba(0,188,212,0.15);">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <i class="bi bi-lock" style="font-size: 48px; color: var(--accent-blue);"></i>
+                    <h3 style="margin-top: 10px; margin-bottom: 5px;">Remote Access Locked</h3>
+                    <p style="color: var(--text-sub); font-size: 12px;">This computer is in remote security mode.</p>
+                </div>
+
+                <label class="modal-label" style="text-align: left;">Authentication Password</label>
+                <input type="password" id="remote_auth_password_input" class="modal-input"
+                    placeholder="Enter your password" style="margin-bottom: 15px;"
+                    onkeypress="checkRemoteAuthEnter(event)">
+
+                <div id="remoteAuthAttemptMsg" style="text-align: center; font-size: 12px; color: #ff5252; margin-bottom: 12px; min-height: 18px;"></div>
+
+                <button class="btn btn-blue" style="width: 100%;" onclick="verifyRemoteLockAuth()">Authenticate</button>
+            </div>
+        </div>
+
+        <div id="deleteConfirmModal" class="modal-overlay">
+            <div class="modal" style="border-color:var(--accent-red);">
+                <h3 style="color:var(--accent-red)" data-i18n="modal_del_title">🚫 정말 삭제하시겠습니까?</h3>
+                <p style="color:#ddd;"><span data-i18n="modal_del_msg">선택된 서버: </span><b id="delTargetName"
+                        style="color:#fff"></b></p>
+                <div class="modal-btn-group"><button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('deleteConfirmModal')" data-i18n="btn_cancel">취소</button><button
+                        class="btn btn-red" onclick="confirmDeleteProcess()" data-i18n="btn_delete">제거</button></div>
+            </div>
+        </div>
+
+
+
+        <!-- 백업 설정 모달 -->
+        <div id="backupSettingsModal" class="modal-overlay">
+            <div class="modal" style="width: 420px;">
+                <h3 style="color:var(--melon);" data-i18n="title_backup">💾 백업 설정</h3>
+                <div class="setting-row">
+                    <div data-i18n="set_auto_backup">자동 백업 활성화</div><label class="switch"><input type="checkbox"
+                            id="auto_backup"><span class="slider"></span></label>
+                </div>
+                <div class="setting-row">
+                    <div data-i18n="set_backup_interval">백업 주기 (분)</div><input type="number"
+                        id="backup_interval" class="input-num" value="60">
+                </div>
+                <div style="display:flex; gap:8px; margin-top:15px; justify-content:flex-end;">
+                    <button class="btn" style="background:rgba(255,152,0,0.1); border:1px solid rgba(255,152,0,0.3); color:var(--accent-orange);" onclick="closeModal('backupSettingsModal'); openBackupRestoreModal()" data-i18n="btn_restore_backup">복구</button>
+                    <button class="btn btn-blue" onclick="triggerBackup()" data-i18n="btn_backup_now">지금 백업하기</button>
+                </div>
+                <div class="modal-btn-group" style="margin-top:15px;">
+                    <button class="btn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);" onclick="closeModal('backupSettingsModal')" data-i18n="btn_close">닫기</button>
+                    <button class="btn btn-blue" onclick="saveSettings(); closeModal('backupSettingsModal')" data-i18n="btn_apply">적용</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- server.properties 설정 모달 (허브) -->
+        <div id="serverPropertiesModal" class="modal-overlay">
+            <div class="modal" style="width: 480px;">
+                <h3 style="color:var(--accent-orange);">📝 server.properties</h3>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:15px;">카테고리를 선택하여 설정을 변경하세요.</p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="env-btn" onclick="loadSettings(); openModal('spGeneralModal')"
+                        style="padding:24px 16px; border-color:var(--accent-orange);">
+                        <div style="font-size:14px; font-weight:800;">📝 일반 설정</div>
+                        <p style="font-size:10px; color:var(--text-sub); margin:4px 0 0 0;">MOTD, Port, IP, Max Players...</p>
+                    </div>
+                    <div class="env-btn" onclick="loadSettings(); openModal('spPerformanceModal')"
+                        style="padding:24px 16px; border-color:#9b59b6;">
+                        <div style="font-size:14px; font-weight:800;">🚀 성능 및 네트워크</div>
+                        <p style="font-size:10px; color:var(--text-sub); margin:4px 0 0 0;">View Distance, Tick, Compression...</p>
+                    </div>
+                    <div class="env-btn" onclick="loadSettings(); openModal('spWorldModal')"
+                        style="padding:24px 16px; border-color:#27ae60;">
+                        <div style="font-size:14px; font-weight:800;">🌍 월드 및 생성</div>
+                        <p style="font-size:10px; color:var(--text-sub); margin:4px 0 0 0;">Seed, Type, Structures, Nether...</p>
+                    </div>
+                    <div class="env-btn" onclick="loadSettings(); openModal('spGameplayModal')"
+                        style="padding:24px 16px; border-color:#e74c3c;">
+                        <div style="font-size:14px; font-weight:800;">🎮 게임 플레이</div>
+                        <p style="font-size:10px; color:var(--text-sub); margin:4px 0 0 0;">Gamemode, Difficulty, PVP, Flight...</p>
+                    </div>
+                    <div class="env-btn" onclick="loadSettings(); openModal('spSecurityModal')"
+                        style="padding:24px 16px; border-color:var(--melon);">
+                        <div style="font-size:14px; font-weight:800;">🔒 보안 및 기타</div>
+                        <p style="font-size:10px; color:var(--text-sub); margin:4px 0 0 0;">RCON, Query, Packs, Debug...</p>
+                    </div>
+                </div>
+                <div class="modal-btn-group" style="margin-top:15px;">
+                    <button class="btn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); width:100%;" onclick="closeModal('serverPropertiesModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 일반 설정 서브 모달 -->
+        <div id="spGeneralModal" class="modal-overlay">
+            <div class="modal" style="width: 600px; max-height: 90vh; overflow-y: auto;">
+                <h3 style="color:var(--accent-orange);">📝 일반 설정</h3>
+                <div class="setting-card">
+                    <div class="setting-row"><div data-i18n="set_motd">서버 이름 (MOTD)</div><input type="text" id="motd" class="input-text" style="width:300px;"></div>
+                    <div class="setting-row"><div data-i18n="set_server_port">서버 포트</div><input type="number" id="server-port" class="input-num"></div>
+                    <div class="setting-row"><div data-i18n="set_server_ip">서버 IP</div><input type="text" id="server-ip" class="input-text"></div>
+                    <div class="setting-row"><div data-i18n="set_max_players">최대 인원</div><input type="number" id="max-players" class="input-num"></div>
+                    <div class="setting-row"><div data-i18n="set_online_mode">정품 인증</div><label class="switch"><input type="checkbox" id="online-mode"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_white_list">화이트리스트</div><label class="switch"><input type="checkbox" id="white-list"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_enforce_whitelist">화이트리스트 강제</div><label class="switch"><input type="checkbox" id="enforce-whitelist"><span class="slider"></span></label></div>
+                </div>
+                <div class="modal-btn-group" style="margin-top:15px;">
+                    <button class="btn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);" onclick="closeModal('spGeneralModal')" data-i18n="btn_close">닫기</button>
+                    <button class="btn btn-blue" onclick="saveSettings(); closeModal('spGeneralModal')" data-i18n="btn_save_settings">💾 설정 저장하기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 성능 및 네트워크 서브 모달 -->
+        <div id="spPerformanceModal" class="modal-overlay">
+            <div class="modal" style="width: 600px; max-height: 90vh; overflow-y: auto;">
+                <h3 style="color:#9b59b6;">🚀 성능 및 네트워크</h3>
+                <div class="setting-card">
+                    <div class="setting-row"><div data-i18n="set_view_distance">시야 거리</div><input type="number" id="view-distance" class="input-num"></div>
+                    <div class="setting-row"><div data-i18n="set_simulation_distance">연산 거리</div><input type="number" id="simulation-distance" class="input-num"></div>
+                    <div class="setting-row"><div data-i18n="set_max_tick_time">최대 틱 시간</div><input type="number" id="max-tick-time" class="input-num"></div>
+                    <div class="setting-row"><div data-i18n="set_network_compression_threshold">네트워크 압축 임계값</div><input type="number" id="network-compression-threshold" class="input-num"></div>
+                    <div class="setting-row"><div data-i18n="set_rate_limit">패킷 제한</div><input type="number" id="rate-limit" class="input-num"></div>
+                    <div class="setting-row"><div data-i18n="set_use_native_transport">네이티브 전송 사용</div><label class="switch"><input type="checkbox" id="use-native-transport"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_enable_status">상태 표시 활성화</div><label class="switch"><input type="checkbox" id="enable-status"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_broadcast_rcon_to_ops">RCON 로그 방송</div><label class="switch"><input type="checkbox" id="broadcast-rcon-to-ops"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_broadcast_console_to_ops">콘솔 로그 방송</div><label class="switch"><input type="checkbox" id="broadcast-console-to-ops"><span class="slider"></span></label></div>
+                </div>
+                <div class="modal-btn-group" style="margin-top:15px;">
+                    <button class="btn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);" onclick="closeModal('spPerformanceModal')" data-i18n="btn_close">닫기</button>
+                    <button class="btn btn-blue" onclick="saveSettings(); closeModal('spPerformanceModal')" data-i18n="btn_save_settings">💾 설정 저장하기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 월드 및 생성 서브 모달 -->
+        <div id="spWorldModal" class="modal-overlay">
+            <div class="modal" style="width: 600px; max-height: 90vh; overflow-y: auto;">
+                <h3 style="color:#27ae60;">🌍 월드 및 생성</h3>
+                <div class="setting-card">
+                    <div class="setting-row"><div data-i18n="set_level_name">월드 폴더명</div><input type="text" id="level-name" class="input-text"></div>
+                    <div class="setting-row"><div data-i18n="set_level_seed">월드 시드</div><input type="text" id="level-seed" class="input-text"></div>
+                    <div class="setting-row"><div data-i18n="set_level_type">월드 타입</div><input type="text" id="level-type" class="input-text"></div>
+                    <div class="setting-row"><div data-i18n="set_generator_settings">생성기 설정</div><input type="text" id="generator-settings" class="input-text"></div>
+                    <div class="setting-row"><div data-i18n="set_max_world_size">월드 최대 크기</div><input type="number" id="max-world-size" class="input-num"></div>
+                    <div class="setting-row"><div data-i18n="set_allow_nether">네더(지옥) 허용</div><label class="switch"><input type="checkbox" id="allow-nether"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_generate_structures">구조물 생성</div><label class="switch"><input type="checkbox" id="generate-structures"><span class="slider"></span></label></div>
+                </div>
+                <div class="modal-btn-group" style="margin-top:15px;">
+                    <button class="btn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);" onclick="closeModal('spWorldModal')" data-i18n="btn_close">닫기</button>
+                    <button class="btn btn-blue" onclick="saveSettings(); closeModal('spWorldModal')" data-i18n="btn_save_settings">💾 설정 저장하기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 게임 플레이 서브 모달 -->
+        <div id="spGameplayModal" class="modal-overlay">
+            <div class="modal" style="width: 600px; max-height: 90vh; overflow-y: auto;">
+                <h3 style="color:#e74c3c;">🎮 게임 플레이</h3>
+                <div class="setting-card">
+                    <div class="setting-row"><div data-i18n="set_gamemode">기본 게임모드</div>
+                        <select id="gamemode" class="input-select" style="width:170px;">
+                            <option value="survival">서바이벌 (Survival)</option>
+                            <option value="creative">크리에이티브 (Creative)</option>
+                            <option value="adventure">모험 (Adventure)</option>
+                            <option value="spectator">관전자 (Spectator)</option>
+                        </select>
+                    </div>
+                    <div class="setting-row"><div data-i18n="set_force_gamemode">게임모드 강제</div><label class="switch"><input type="checkbox" id="force-gamemode"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_difficulty">난이도</div>
+                        <select id="difficulty" class="input-select" style="width:170px;">
+                            <option value="peaceful">평화로움 (Peaceful)</option>
+                            <option value="easy">쉬움 (Easy)</option>
+                            <option value="normal">보통 (Normal)</option>
+                            <option value="hard">어려움 (Hard)</option>
+                        </select>
+                    </div>
+                    <div class="setting-row"><div data-i18n="set_hardcore">하드코어</div><label class="switch"><input type="checkbox" id="hardcore"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_pvp">PVP 허용</div><label class="switch"><input type="checkbox" id="pvp"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_allow_flight">비행 허용</div><label class="switch"><input type="checkbox" id="allow-flight"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_spawn_monsters">몬스터 스폰</div><label class="switch"><input type="checkbox" id="spawn-monsters"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_spawn_animals">동물 스폰</div><label class="switch"><input type="checkbox" id="spawn-animals"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_spawn_npcs">NPC 스폰</div><label class="switch"><input type="checkbox" id="spawn-npcs"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_spawn_protection">스폰 보호 구역</div><input type="number" id="spawn-protection" class="input-num"></div>
+                    <div class="setting-row"><div data-i18n="set_enable_command_block">커맨드 블록 허용</div><label class="switch"><input type="checkbox" id="enable-command-block"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_player_idle_timeout">잠수 추방 시간(분)</div><input type="number" id="player-idle-timeout" class="input-num"></div>
+                </div>
+                <div class="modal-btn-group" style="margin-top:15px;">
+                    <button class="btn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);" onclick="closeModal('spGameplayModal')" data-i18n="btn_close">닫기</button>
+                    <button class="btn btn-blue" onclick="saveSettings(); closeModal('spGameplayModal')" data-i18n="btn_save_settings">💾 설정 저장하기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 보안 및 기타 서브 모달 -->
+        <div id="spSecurityModal" class="modal-overlay">
+            <div class="modal" style="width: 600px; max-height: 90vh; overflow-y: auto;">
+                <h3 style="color:var(--melon);">🔒 보안 및 기타</h3>
+                <div class="setting-card">
+                    <div class="setting-row"><div data-i18n="set_op_permission_level">OP 권한 레벨</div><input type="number" id="op-permission-level" class="input-num"></div>
+                    <div class="setting-row"><div data-i18n="set_log_ips">IP 기록</div><label class="switch"><input type="checkbox" id="log-ips"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_enforce_secure_profile">보안 프로필 강제</div><label class="switch"><input type="checkbox" id="enforce-secure-profile"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_prevent_proxy_connections">프록시 연결 방지</div><label class="switch"><input type="checkbox" id="prevent-proxy-connections"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_resource_pack">리소스팩 URL</div><input type="text" id="resource-pack" class="input-text"></div>
+                    <div class="setting-row"><div data-i18n="set_require_resource_pack">리소스팩 강제</div><label class="switch"><input type="checkbox" id="require-resource-pack"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_enable_rcon">RCON 활성화</div><label class="switch"><input type="checkbox" id="enable-rcon"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_rcon_port">RCON 포트</div><input type="number" id="rcon.port" class="input-num"></div>
+                    <div class="setting-row"><div data-i18n="set_rcon_password">RCON 비밀번호</div><input type="text" id="rcon.password" class="input-text"></div>
+                    <div class="setting-row"><div data-i18n="set_enable_query">Query 활성화</div><label class="switch"><input type="checkbox" id="enable-query"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_query_port">Query 포트</div><input type="number" id="query.port" class="input-num"></div>
+                    <div class="setting-row"><div data-i18n="set_sync_chunk_writes">청크 동기화 저장</div><label class="switch"><input type="checkbox" id="sync-chunk-writes"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_enable_jmx_monitoring">JMX 모니터링</div><label class="switch"><input type="checkbox" id="enable-jmx-monitoring"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_entity_broadcast_range_percentage">엔티티 방송 범위(%)</div><input type="number" id="entity-broadcast-range-percentage" class="input-num"></div>
+                    <div class="setting-row"><div data-i18n="set_max_chained_neighbor_updates">최대 이웃 업데이트</div><input type="number" id="max-chained-neighbor-updates" class="input-num"></div>
+                    <div class="setting-row"><div data-i18n="set_region_file_compression">청크 압축 방식</div><input type="text" id="region-file-compression" class="input-text" style="width:100px;"></div>
+                    <div class="setting-row"><div data-i18n="set_accepts_transfers">서버 이동 허용</div><label class="switch"><input type="checkbox" id="accepts-transfers"><span class="slider"></span></label></div>
+                    <div class="setting-row"><div data-i18n="set_bug_report_link">버그 리포트 링크</div><input type="text" id="bug-report-link" class="input-text"></div>
+                    <div class="setting-row"><div data-i18n="set_initial_enabled_packs">초기 활성 팩</div><input type="text" id="initial-enabled-packs" class="input-text"></div>
+                    <div class="setting-row"><div data-i18n="set_initial_disabled_packs">초기 비활성 팩</div><input type="text" id="initial-disabled-packs" class="input-text"></div>
+                    <div class="setting-row"><div data-i18n="set_debug">디버그 모드</div><label class="switch"><input type="checkbox" id="debug"><span class="slider"></span></label></div>
+                </div>
+                <div class="modal-btn-group" style="margin-top:15px;">
+                    <button class="btn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);" onclick="closeModal('spSecurityModal')" data-i18n="btn_close">닫기</button>
+                    <button class="btn btn-blue" onclick="saveSettings(); closeModal('spSecurityModal')" data-i18n="btn_save_settings">💾 설정 저장하기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Java 설정 모달 -->
+        <div id="javaSettingsModal" class="modal-overlay">
+            <div class="modal" style="width: 480px;">
+                <h3 style="color:var(--accent-blue);" data-i18n="title_java">☕ Java 설정</h3>
+                <div style="margin-bottom:8px; color:var(--text-sub); font-size:13px;">실행 경로 (Java Executable Path):</div>
+                <div style="display:flex; gap:5px; margin-bottom:12px;">
+                    <input type="text" id="java_path" class="input-text" style="flex:1; text-align:left;"
+                        placeholder="예: C:\Program Files\Java\jdk-17\bin\java.exe">
+                </div>
+                <button class="btn"
+                    style="width:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); display:flex; justify-content:center; align-items:center; gap:8px;"
+                    onclick="openServerJavaManager()">
+                    <i class="bi bi-list"></i> 목록에서 선택 (Select from List)
+                </button>
+
+                <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin:16px 0;">
+
+                <div style="color:var(--text-sub); font-size:13px; margin-bottom:8px;" data-i18n="set_ram">메모리 할당</div>
+                <div class="setting-row">
+                    <span style="color:var(--melon); font-weight:bold;"><span id="ramDisplay">2</span> GB</span>
+                    <input type="range" id="ramSlider" min="1" max="32" value="2"
+                        style="width: 220px; accent-color: var(--melon);" oninput="updateRamLabel(this.value)">
+                </div>
+
+                <p style="font-size:12px; color:#888; margin-top:10px;" data-i18n="msg_java_tip">* 1.18 이상은 Java 17 이상, 그 이하는 Java 8 권장</p>
+                <div class="modal-btn-group" style="margin-top:15px;">
+                    <button class="btn" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);" onclick="closeModal('javaSettingsModal')" data-i18n="btn_close">닫기</button>
+                    <button class="btn btn-blue" onclick="saveJavaRamSettings()" data-i18n="btn_apply">적용</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="javaManagerModal" class="modal-overlay">
+            <div class="modal" style="width: 520px;">
+                <h3 data-i18n="title_java_manager">☕ 설치된 자바 관리</h3>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:15px;" data-i18n="desc_java_manager">
+                    아래 목록에서 기본 자바 버전을 지정해 줄 수 있습니다.<br>
+                    <span id="javaManagerContextMsg"></span>
+                </p>
+                <div id="javaListContainer" class="list-box" style="height: 320px;">
+                    <div style="text-align:center; padding:20px; color:#666;">Loading...</div>
+                </div>
+                <div style="text-align:right; margin-top:15px;">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('javaManagerModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="javaApplyConfirmModal" class="modal-overlay">
+            <div class="modal">
+                <h3 style="color:var(--accent-green);" data-i18n="title_java_apply">⚠️ 설정 변경 확인</h3>
+                <p style="color:#ddd; margin-bottom:20px;" data-i18n="msg_java_apply_confirm">
+                    정말 이 자바 버전으로 기본 설정을 변경하시겠습니까?
+                </p>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('javaApplyConfirmModal')" data-i18n="btn_cancel">취소</button>
+                    <button class="btn btn-blue" onclick="executeJavaPathChange()" data-i18n="btn_confirm">확인</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="backupRestoreModal" class="modal-overlay">
+            <div class="modal">
+                <h3 data-i18n="title_backup_restore">💾 백업 복구</h3>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:15px;" data-i18n="desc_backup_restore">
+                    아래 목록에서 복구할 백업을 선택하세요.<br>복구 시 현재 서버 파일은 모두 삭제됩니다.
+                </p>
+                <p style="font-size:11px; color:#ff9800; text-align:center; margin-bottom:15px;">⚠️ 서버가 중지된 상태에서만 사용해주세요.</p>
+                <div id="backupListContainer" style="max-height: 240px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 4px;">
+                    <div style="text-align:center; padding:20px; color:#666;">Loading...</div>
+                </div>
+                <div style="margin-top: 12px;" id="restoreProgressArea" class="hidden">
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#888; margin-bottom:4px;"><span id="restoreCurrentFile"></span><span id="restoreProgressText"></span></div>
+                    <div style="background:rgba(255,255,255,0.1); border-radius:10px; height:6px; overflow:hidden;"><div id="restoreProgressBar" style="width:0%; height:100%; background:linear-gradient(90deg, #ff9800, #ff5722); transition: width 0.3s;"></div></div>
+                </div>
+                <div class="modal-btn-group" style="margin-top: 12px;">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('backupRestoreModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="restoreConfirmModal" class="modal-overlay">
+            <div class="modal" style="width: 400px;">
+                <h3 style="color:var(--accent-orange);">⚠️ 백업 복구 확인</h3>
+                <p style="color:#ddd; margin-bottom:20px;" id="restoreConfirmMsg"></p>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('restoreConfirmModal')">취소</button>
+                    <button class="btn" style="background:rgba(255,152,0,0.2); border:1px solid #ff9800; color:#ff9800;"
+                        onclick="executeRestoreBackup()">확인 및 복구</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="javaHelpModal" class="modal-overlay">
+            <div class="modal">
+                <h3 style="color:#fff;" data-i18n="title_java_help">🛠️ 해결 도구 (Troubleshoot)</h3>
+                <p style="color:var(--text-sub); font-size:13px; margin-bottom:20px;" data-i18n="desc_java_help">
+                    자바 실행환경 충돌이나 비정상 상태 문제를 해결하기 위한 강제 정지 유틸리티 도구입니다.
+                </p>
+                <button class="btn"
+                    style="width:100%; background:rgba(255,82,82,0.08); border:1px solid var(--accent-red); color:var(--accent-red); display:flex; justify-content:center; align-items:center; gap:8px;"
+                    onclick="askKillJava()" data-i18n="btn_force_kill_java">
+                    <i class="bi bi-x-octagon"></i> 자바 강제 종료 (Force Kill Java)
+                </button>
+                <div style="text-align:right; margin-top:20px;">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('javaHelpModal')" data-i18n="btn_close">닫기</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="killJavaConfirmModal" class="modal-overlay">
+            <div class="modal" style="border-color:var(--accent-red);">
+                <h3 style="color:var(--accent-red);" data-i18n="title_kill_java">⚠️ 경고 (Warning)</h3>
+                <p style="color:#ddd; margin-bottom:20px; line-height:1.6;" data-i18n="msg_kill_java_warning">
+                    이 기능을 실행하면 <b>컴퓨터에서 구동 중인 모든 Java 기반 프로세스가 예외 없이 즉시 강제 종료됩니다.</b><br><br>
+                    실행 중인 다른 공용 서버나 게임 클라이언트의 저장이 정상적으로 처리되지 않을 수 있습니다. 진행하겠습니까?
+                </p>
+                <div class="modal-btn-group">
+                    <button class="btn"
+                        style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
+                        onclick="closeModal('killJavaConfirmModal')" data-i18n="btn_cancel">취소</button>
+                    <button class="btn btn-red" onclick="executeKillJava()" data-i18n="btn_kill_all">확인 (Kill All)</button>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div id="remoteNoticeModal" class="modal-overlay">
+            <div class="modal" style="border-color: var(--accent-gold); max-width:420px;">
+                <h3 style="color:var(--accent-gold); display:flex; align-items:center; gap:8px;" data-i18n="title_remote_notice">
+                    <i class="bi bi-exclamation-circle"></i> 원격 제어 주의사항
+                </h3>
+                <p style="color:#ddd; line-height: 1.7; margin-bottom: 20px; font-size:14px;" data-i18n="msg_remote_notice">
+                    원격 제어 기능은 아직 <b>미완성(베타)</b> 기능입니다.<br><br>
+                    확인되지 않은 보안 문제나 오류가 발생할 수 있습니다.<br>
+                    중요한 서버 운영 시에는 원격 제어를 비활성화하고<br>
+                    로컬에서 직접 관리하는 것을 권장합니다.
+                </p>
+                <p style="color:var(--accent-red); font-size:12px; line-height:1.6; text-align:center; padding:10px; border:1px solid rgba(255,82,82,0.2); border-radius:8px; background:rgba(255,82,82,0.05); margin-bottom:15px;" data-i18n="msg_remote_disclaimer">
+                    ⚠️ 제작자는 본 기능 사용으로 인한 해킹, 데이터 손실,<br>및 기타 모든 문제에 대해 책임지지 않습니다.
+                </p>
+                <div class="modal-btn-group">
+                    <button class="btn btn-blue" style="width:100%; font-weight:800;"
+                        onclick="closeModal('remoteNoticeModal')" data-i18n="btn_confirm_ok">확인 (OK)</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="restartAppModal" class="modal-overlay">
+            <div class="modal" style="border-color: var(--accent-gold);">
+                <h3 style="color:var(--accent-gold); display:flex; align-items:center; gap:8px;">
+                    <i class="bi bi-info-circle"></i> <span data-i18n="remote_apply_title">설정 저장 완료</span>
+                </h3>
+                <p style="color:#ddd; line-height: 1.6; margin-bottom: 20px;" data-i18n="remote_apply_desc">
+                    프로그램 재시작 시 적용됩니다
+                </p>
+                <div class="modal-btn-group">
+                    <button class="btn btn-blue" style="width:100%; font-weight:800;"
+                        onclick="closeModal('restartAppModal')" data-i18n="btn_confirm">확인</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- [추가] 최초 실행 튜토리얼/환영 모달 -->
+        <div id="welcomeModal" class="modal-overlay">
+            <div class="modal" style="width: 500px; text-align: center; border-color: var(--accent-blue);">
+                <i class="bi bi-stars" style="font-size: 64px; color: var(--accent-blue); margin-bottom: 20px;"></i>
+
+                <!-- 1페이지: 언어/미러 설정 -->
+                <div id="welcomePage1">
+                    <h2 style="margin-bottom: 10px;" data-i18n="welcome_title">환영합니다!</h2>
+                    <p style="color: var(--text-sub); margin-bottom: 30px;" data-i18n="welcome_desc">
+                        AYA Server Launcher를 사용해 주셔서 감사합니다.<br>
+                        최초 실행을 위한 기본 설정을 진행해 주세요.
+                    </p>
+                    <div
+                        style="text-align: left; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 30px;">
+                        <label class="modal-label" style="color: var(--accent-blue);" data-i18n="welcome_lang_label">🌐 언어 선택 (Language)</label>
+                        <select id="welcomeLangSelect" class="modal-input" onchange="changeLanguage(this.value)"
+                            style="margin-bottom: 20px;">
+                        </select>
+                        <label class="modal-label" style="color: var(--accent-blue);" data-i18n="welcome_mirror_label">🔗 서버 다운로드 미러 설정 (Mirror URL)</label>
+                        <p style="font-size: 11px; color: #888; margin-bottom: 8px;" data-i18n="welcome_mirror_hint">* 기본값 사용을 권장합니다. (PurpurMC)</p>
+                        <input type="text" id="welcomeMirrorUrl" class="modal-input"
+                            value="https://api.purpurmc.org/v2/purpur">
+                        <label class="modal-label" style="color: var(--accent-blue); margin-top: 8px;">🖥️ UI 모드 (Webview / Browser)</label>
+                        <p style="font-size: 11px; color: #888; margin-bottom: 8px;">* 웹뷰는 앱 전용 창, 브라우저는 기본 웹브라우저에서 열립니다.</p>
+                        <select id="welcomeUiMode" class="modal-input">
+                            <option value="browser">브라우저 (Browser)</option>
+                            <option value="webview">웹뷰 (Webview, Native)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-blue" style="width: 100%; height: 50px; font-weight: 800; font-size: 16px;"
+                        onclick="showWelcomePage2()" data-i18n="btn_next">Next</button>
+                </div>
+
+                <!-- 2페이지: 약관 동의 -->
+                    <div id="welcomePage2" style="display:none;">
+                    <h2 style="margin-bottom: 10px;" data-i18n="welcome_eula_title">📜 최종 사용자 라이선스 계약 (EULA)</h2>
+                    <div style="text-align: left; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px; max-height: 300px; overflow-y: auto; font-size: 12px; color: #ccc; line-height: 1.7;">
+                        <p>본 소프트웨어는 이용자에게 무료로 제공되나, 본 소프트웨어의 사용으로 인해 발생하는 모든 결과에 대한 책임은 전적으로 이용자 본인에게 있습니다. 제작자는 본 소프트웨어의 사용 및 결과에 대해 어떠한 법적 책임도 지지 않습니다.</p>
+                        <br>
+                        <p><b>제1조 (목적)</b></p>
+                        <p>본 약관은 개발자(이하 "제작자")가 제공하는 'AYA Server Launcher'(이하 "본 소프트웨어")를 이용자가 다운로드, 설치 및 사용하는 과정에서 제작자와 이용자 간의 권리, 의무 및 책임 제한 사항을 규정함을 목적으로 합니다.</p>
+                        <br>
+                        <p><b>제2조 (라이선스 및 사용 범위)</b></p>
+                        <p>- 사용자는 본 소프트웨어를 개인적 및 상업적 용도로 사용할 수 있습니다.</p>
+                        <p>- 사용자는 본 소프트웨어의 기능 개선, 연구 등을 위해 소프트웨어를 자유롭게 개조, 변형 및 디컴파일 할 수 있습니다.</p>
+                        <p>- 단, 본 소프트웨어를 개조하거나 재배포할 경우, 이용자는 반드시 원본 프로그램의 이름(AYA Server Launcher)과 출처를 다른 사용자가 쉽게 확인할 수 있도록 명확히 표기해야 합니다.</p>
+                        <p>- 출처 표기 없는 무단 배포 및 본 소프트웨어를 이용한 유료 판매 행위는 금지됩니다.</p>
+                        <br>
+                        <p><b>제3조 (책임의 한계 및 면책)</b></p>
+                        <p>- 본 소프트웨어는 오류나 버그가 존재할 수 있는 상태 "있는 그대로(AS-IS)" 제공되며, 제작자는 본 소프트웨어의 기능성, 안정성, 지속성에 대해 명시적 또는 묵시적인 어떠한 보증도 하지 않습니다.</p>
+                        <p>- 이용자가 본 소프트웨어(또는 개조된 소프트웨어)를 사용하여 서버를 구축 및 운영하는 과정에서 발생하는 데이터 손실, 시스템 마비, 해킹 및 보안 침해 사고, 네트워크 장애, 또는 기타 모든 유무형의 손해에 대해 제작자는 일체의 책임을 지지 않습니다.</p>
+                        <p>- 본 소프트웨어는 고도의 안정성과 보안이 요구되는 시스템이나 중요 데이터 처리 등의 환경에는 부적합 할 수 있으며, 이를 무시하고 발생한 모든 결과에 대한 책임은 사용자에게 있습니다.</p>
+                        <br>
+                        <p><b>제4조 (서드파티 서비스 및 플러그인)</b></p>
+                        <p>본 소프트웨어는 기능 구현 및 원활한 서버 구동을 위해 타사의 외부 API, 프로그램, 플러그인, 라이브러리 등을 포함하거나 연동할 수 있습니다.</p>
+                        <br>
+                        <p><b>제5조 (약관의 효력 및 위반 시 조치)</b></p>
+                        <p>- 이용자가 본 소프트웨어를 다운로드, 설치 또는 실행하는 경우 본 약관의 모든 내용에 동의한 것으로 간주합니다.</p>
+                        <p>- 이용자가 본 약관의 규정(출처 미표기 등)을 위반하는 경우, 본 소프트웨어에 대한 이용 라이선스는 즉시 자동으로 종료되며, 이용자는 소프트웨어의 사용을 중단하고 이를 삭제해야 합니다.</p>
+                        <br>
+                        <p style="color:var(--accent-orange); font-weight:700;">⚠️ 본 소프트웨어를 사용함으로써 위 약관에 동의하는 것으로 간주됩니다.</p>
+                        <p style="color:var(--accent-red); font-weight:700;">⚠️ 본 소프트웨어는 중요한 서버 운영에는 적합하지 않을 수 있습니다.</p>
+                    </div>
+                    <button class="btn btn-blue" style="width:100%; height:50px; font-weight:800; font-size:16px;"
+                        onclick="saveFirstRunSettings()" data-i18n="welcome_btn_start">시작하기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- [추가] 무단 접근용 무한 팝업 모달 (로그인창 20000보다 낮은 19000으로 설정) -->
+        <div id="accessRestrictedModal" class="modal-overlay"
+            style="z-index: 19000; background: rgba(0,0,0,0.7); backdrop-filter: blur(3px);">
+            <div class="modal" style="width: 320px; border-color: #ff5252; text-align: center;">
+                <i class="bi bi-shield-slash" style="font-size: 48px; color: #ff5252; margin-bottom: 15px;"></i>
+                <h3 style="color: #ff5252; margin-bottom: 10px;">Security Warning</h3>
+                <p style="color: #eee; font-size: 14px; margin-bottom: 20px; font-weight: 700;">
+                    Access Restricted Session
+                </p>
+                <div style="color: #ff5252; font-size: 11px; margin-top: 10px;">Please authenticate via the login screen
+                    above.</div>
+            </div>
+        </div>
+    </div> <!-- 메인 레이아웃 컨테이너 close -->
+
+    <!-- ===================== TUNNEL (AYANAT) ===================== -->
+    <div id="tunnelOverlay" class="overlay-hidden">
+        <div class="tunnel-shell">
+            <div class="tunnel-topbar">
+                <div class="tunnel-brand"><i class="bi bi-globe"></i> AYANAT 터널</div>
+                <button class="tunnel-x" onclick="closeTunnel()"><i class="bi bi-x"></i></button>
+            </div>
+
+            <!-- LOGIN SCREEN -->
+            <div id="tunnelLogin" class="tunnel-screen active">
+                <div class="tunnel-login-card">
+                    <h2>터널 로그인</h2>
+                    <div class="tunnel-server-note">AYANAT</div>
+                    <form id="tunnelLoginForm" autocomplete="on">
+                        <label>아이디</label>
+                        <input id="tUser" name="username" autocomplete="username" class="tunnel-input" placeholder="username">
+                        <label>비밀번호</label>
+                        <input id="tPass" name="password" autocomplete="current-password" class="tunnel-input" type="password" placeholder="password">
+                        <button class="btn btn-blue tunnel-login-btn" type="submit">로그인</button>
+                    </form>
+                    <div id="tunnelLoginErr" class="tunnel-msg"></div>
+                </div>
+            </div>
+
+            <!-- MAIN SCREEN -->
+            <div id="tunnelMain" class="tunnel-screen">
+                <div id="tunnelBusyBanner" class="tunnel-busy-banner" style="display:none;">세션이 많아 연결이 제한될 수 있습니다</div>
+                <div class="tunnel-layout">
+                    <div class="tunnel-left">
+                        <div class="tunnel-card">
+                            <div class="tunnel-card-title">크레딧</div>
+                            <div id="tunnelCredits" class="tunnel-credits">0분</div>
+                            <div id="tunnelCreditsSub" class="tunnel-sub"></div>
+                            <div id="tunnelPlan" class="tunnel-plan"></div>
+                            <div id="tunnelUser" class="tunnel-user"></div>
+                        </div>
+                        <div class="tunnel-card">
+                            <div class="tunnel-card-title">터널 제어</div>
+                            <div class="tunnel-row">
+                                <input id="tTargetHost" class="tunnel-input" value="127.0.0.1">
+                                <input id="tTargetPort" class="tunnel-input port" value="25565">
+                            </div>
+                    <button id="tunnelBtn" class="btn btn-blue" onclick="tunnelToggle()">터널 열기</button>
+                            <div id="tunnelStatus" class="tunnel-status-box" style="display:none;">
+                                <span class="status-dot" id="tunnelDot"></span>
+                                <span>공개 주소:</span> <code id="tunnelAddr"></code>
+                                <button class="btn-copy" onclick="tunnelCopyAddr()">복사</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tunnel-right">
+                        <div class="tunnel-card">
+                            <div class="tunnel-card-title">접속자</div>
+                            <div id="tunnelConns" class="tunnel-conns"><div class="conn-empty">접속자가 없습니다</div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tunnel-logout">
+                    <button class="btn btn-blue" onclick="openModal('tunnelChangePwModal')" style="margin-right: 8px;">🔑 비밀번호 변경</button>
+                    <button class="btn btn-red" onclick="tunnelDoLogout()">로그아웃</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TUNNEL PASSWORD CHANGE MODAL -->
+    <div id="tunnelChangePwModal" class="modal-overlay" style="z-index: 21000;">
+        <div class="modal" style="width: 380px; border-color: var(--accent-cyan);">
+            <h3 style="margin-bottom: 15px;">🔑 터널 비밀번호 변경</h3>
+            <div style="text-align: left; background: rgba(255,255,255,0.03); padding: 18px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+                <label class="modal-label" style="color: var(--accent-cyan);">현재 비밀번호</label>
+                <input type="password" id="tPwCurrent" class="modal-input" placeholder="현재 비밀번호 입력" autocomplete="current-password">
+                <label class="modal-label" style="color: var(--accent-cyan); margin-top: 8px;">새 비밀번호</label>
+                <input type="password" id="tPwNew" class="modal-input" placeholder="새 비밀번호 입력" autocomplete="new-password">
+                <label class="modal-label" style="color: var(--accent-cyan); margin-top: 8px;">새 비밀번호 확인</label>
+                <input type="password" id="tPwConfirm" class="modal-input" placeholder="새 비밀번호 다시 입력" autocomplete="new-password">
+                <div id="tPwMsg" class="tunnel-msg" style="margin-top: 10px; font-size: 12px;"></div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-blue" style="flex:1; height: 44px; font-weight: 700;" onclick="tunnelChangePassword()">변경</button>
+                <button class="btn" style="flex:1; height: 44px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);" onclick="closeModal('tunnelChangePwModal')">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+
+</body>
+
+</html>

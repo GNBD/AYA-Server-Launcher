@@ -1,0 +1,21 @@
+# Build
+build/
+dist/
+*.spec
+
+# Runtime data
+AYA_data/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Temp
+err.txt
+out.txt
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
