@@ -46,6 +46,7 @@ import core.servers
 import core.remote
 import core.tray
 import core.tunnel
+import core.updater
 
 eel.init('web')
 

@@ -949,14 +949,6 @@
                     <i class="bi bi-x-octagon" style="color: var(--accent-red)"></i>
                 </button>
 
-                <label class="modal-label" style="margin-top:15px;">업데이트</label>
-                <button class="btn" id="updateCheckBtn"
-                    style="background: rgba(63, 185, 80, 0.05); border: 1px solid rgba(63, 185, 80, 0.2); width: 100%; display:flex; justify-content:space-between; align-items:center;"
-                    onclick="checkUpdate()">
-                    <span style="color: var(--accent-green)">🔄 업데이트 확인</span>
-                    <i class="bi bi-cloud-download" style="color: var(--accent-green)"></i>
-                </button>
-
                 <div
                     style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px; text-align: center;">
                     <button class="btn"
@@ -964,7 +956,10 @@
                         onclick="closeModal('launcherSettingsModal'); openModal('creditsModal')" data-i18n="btn_credits">📜 Credits</button>
                 </div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 15px;">
-
+                    <button class="btn" onclick="closeModal('launcherSettingsModal'); checkUpdate()"
+                        style="background:rgba(63,185,80,0.08); border:1px solid rgba(63,185,80,0.25); color:var(--accent-green); font-size:13px;">
+                        🔄 업데이트
+                    </button>
                     <div style="display:flex; gap:8px;">
                         <button class="btn"
                             style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);"
