@@ -1,7 +1,7 @@
 🚀 Project Overview
 
 Server launcher is a tool designed to help you set up a Minecraft Java Edition server quickly and easily.
-It automatically fetches the latest server core through the PaperMC API, and its user interface is built using HTML/CSS.
+It automatically fetches the latest server core through the PaperMC or purpur API, and its user interface is built using HTML/CSS.
 
 
 
