@@ -47,5 +47,3 @@ If any problems arise from this program, it will be taken down without hesitatio
 -----------------------------------------------------
 
 This app is in no way affiliated with Mojang AB or Microsoft Corporation.
-
-❤️ Created with love by JIN
